@@ -1,0 +1,78 @@
+/* --- Barra Superior --- */
+#header {
+    background-color: #2C3E50;
+    padding: 10px;
+    border-radius: 8px;
+}
+QLabel#logo {
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+}
+QPushButton {
+    background-color: #34495E;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 5px;
+}
+QPushButton:hover {
+    background-color: #1ABC9C;
+}
+
+/* Botón de usuario */
+QPushButton#userButton {
+    background-color: #E74C3C;
+    border-radius: 20px;
+    width: 35px;
+    height: 35px;
+}
+
+/* --- Sección Principal --- */
+#mainSection {
+    background-color: #ECF0F1;
+    border-radius: 10px;
+    padding: 20px;
+}
+#textBlock {
+    background-color: white;
+    padding: 40px;
+    border-radius: 10px;
+    font-size: 16px;
+    text-align: center;
+}
+#imageDetail {
+    background-color: white;
+    padding: 20px;
+    border-radius: 10px;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* Botón Visualizar */
+#viewButton {
+    background-color: #3498DB;
+    color: white;
+    font-weight: bold;
+}
+#viewButton:hover {
+    background-color: #2980B9;
+}
+
+/* --- Sección de Plantillas Similares --- */
+#similarSection {
+    background-color: #BDC3C7;
+    padding: 10px;
+    border-radius: 10px;
+}
+#similarImage {
+    background-color: white;
+    padding: 30px;
+    border-radius: 8px;
+    text-align: center;
+}
+#similarTitle {
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+}

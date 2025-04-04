@@ -1,19 +1,83 @@
-QWidget {
-    background-color: #f0f0f0;
-}
-
-QLabel {
-    font-size: 14px;
-    color: #333;
-}
-
-QPushButton {
-    background-color: #28a745;
-    color: white;
+/* --- NAVBAR --- */
+#navbar {
+    background-color: #2C3E50;
     padding: 10px;
+    border-radius: 10px;
+}
+QLabel#logo {
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+}
+QPushButton#navButton, QPushButton#signIn, QPushButton#signUp {
+    color: white;
+    border-radius: 5px;
+    font-size: 14px;
+    padding: 10px;
+}
+QPushButton#signIn:hover, QPushButton#signUp:hover, QPushButton#navButton:hover {
+    background-color: #1ABC9C;
+}
+
+/* --- CARRUSEL --- */
+#carousel {
+    background-color: #ECF0F1;
+    border-radius: 10px;
+    padding: 10px;
+}
+#carouselCard {
+    background-color: white;
+    border-radius: 10px;
+}
+#carouselTitle {
+    font-weight: bold;
+    font-size: 16px;
+}
+#carouselDesc {
+    font-size: 14px;
+}
+QPushButton#carouselBtn {
+    background-color: #3498DB;
+    color: white;
     border-radius: 5px;
 }
+QPushButton#carouselBtn:hover {
+    background-color: #2980B9;
+}
 
-QPushButton:hover {
-    background-color: #218838;
+
+/* 🟦 REGISTRO Y LOGIN */
+
+/* 🟦 INPUT FIELDS */
+QLineEdit#inputField {
+    border: 2px solid #BDC3C7;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 14px;
+}
+QLineEdit#inputField:focus {
+    border: 2px solid #3498DB;
+}
+
+/* 🟦 BOTÓN PRINCIPAL */
+QPushButton#loginButton, QPushButton#registerButton {
+    background-color: #3498DB;
+    color: white;
+    font-size: 16px;
+    border-radius: 8px;
+    padding: 10px;
+}
+QPushButton#loginButton:hover, QPushButton#registerButton:hover {
+    background-color: #2980B9;
+}
+
+/* 🟦 LINKS */
+QPushButton#registerLink {
+    background: none;
+    color: #3498DB;
+    border: none;
+    font-size: 14px;
+}
+QPushButton#registerLink:hover {
+    color: #1E6FBA;
 }
