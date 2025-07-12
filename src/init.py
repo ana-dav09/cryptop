@@ -1,169 +1,128 @@
-import sys
 from PyQt6.QtWidgets import (
-    QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout,
-    QFrame, QSizePolicy, QMainWindow
+    QApplication, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
+    QLabel, QFrame, QSizePolicy
 )
-from PyQt6.QtCore import QPropertyAnimation, QEasingCurve
-from PyQt6.QtGui import QFont, QColor
+from PyQt6.QtGui import QFont, QColor, QPalette
 from PyQt6.QtCore import Qt
+import sys
 
 class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("CryptJAD")
-        self.setGeometry(100, 100, 800, 600)
+        self.setGeometry(100, 100, 1100, 700)
         self.initUI()
-        self.load_stylesheet("style.qss")
 
     def initUI(self):
-        main_layout = QVBoxLayout()
-        
-        # 🟦 NAVBAR - Barra de navegación superior (actualizada)
+        main_layout = QVBoxLayout(self)
+        main_layout.setSpacing(0)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+
+        # Barra superior
         navbar = QFrame()
-        navbar.setObjectName("navbar")
-        navbar_layout = QHBoxLayout()
-        navbar_layout.setContentsMargins(10, 5, 10, 5)
-        navbar_layout.setSpacing(10)
+        navbar.setStyleSheet("background-color: #14406A;")
+        navbar.setFixedHeight(60)
 
-        # Logo
+        nav_layout = QHBoxLayout(navbar)
+        nav_layout.setContentsMargins(20, 0, 20, 0)
+        nav_layout.setSpacing(20)
+
         logo = QLabel("CryptJAD")
-        logo.setFont(QFont("Arial", 12, QFont.Weight.Bold))
-        logo.setObjectName("logo")
-        navbar_layout.addWidget(logo)
+        logo.setStyleSheet("color: white; font-weight: bold; font-size: 20px;")
+        nav_layout.addWidget(logo)
 
-        # Secciones de navegación
-        sections = ["Home", "About", "Services", "Contact"]
-        for section in sections:
-            btn = QPushButton(section)
-            btn.setObjectName("navButton")
-            btn.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
-            navbar_layout.addWidget(btn)
+        for name in ["Inicio", "About Us", "Servicios", "Contacto"]:
+            btn = QPushButton(name)
+            btn.setStyleSheet("color: white; background-color: transparent; border: none; font-size: 15px;")
+            nav_layout.addWidget(btn)
 
-        # Espaciador para empujar los botones de la derecha
-        navbar_layout.addStretch()
+        nav_layout.addStretch()
 
-        # Botón de Sign In
-        sign_in = QPushButton("Sign In")
-        sign_in.setObjectName("signIn")
-        
-        navbar_layout.addWidget(sign_in)
-
-        # Botón de Sign Up
-        sign_up = QPushButton("Sign Up")
-        sign_up.setObjectName("signUp")
-        navbar_layout.addWidget(sign_up)
-
-
-        # Animaciones para ambos botones
-        self.apply_animation(sign_in)
-        self.apply_animation(sign_up)
-
-        navbar.setLayout(navbar_layout)
-
-        # 🟦 ENCABEZADO
-        header = QLabel("Analizador criptográfico")
-        header.setFont(QFont("Arial", 18, QFont.Weight.Bold))
-        header.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        subheader = QLabel("¿Tu algoritmo es seguro?")
-        subheader.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        register_button = QPushButton("Register")
-        register_button.setObjectName("botonReg")
-        register_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-
-        header_layout = QVBoxLayout()
-        header_layout.addWidget(header)
-        header_layout.addWidget(subheader)
-        header_layout.addWidget(register_button, alignment=Qt.AlignmentFlag.AlignCenter)
-
-        # 🟦 FUNCIONES
-        whattodo_label = QLabel("¿Qué deseas hacer?")
-        whattodo_label.setFont(QFont("Arial", 14, QFont.Weight.Bold))
-        whattodo_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        whattodo_layout = QVBoxLayout()
-        whattodo_layout.addWidget(whattodo_label)
-
-        # 🟦 CONTENIDO PRINCIPAL
-        content = QLabel("Bienvenido a CryptJAD")
-        content.setFont(QFont("Arial", 18, QFont.Weight.Bold))
-        content.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        # Agregar widgets al layout principal
-        main_layout.addWidget(navbar)      # Barra de navegación actualizada
-        main_layout.addWidget(content)       # Contenido principal
-        main_layout.addLayout(header_layout) # Encabezado
-        main_layout.addSpacing(20)
-        main_layout.addLayout(whattodo_layout)
-
-        self.setLayout(main_layout)
-
-    def apply_animation(self, button):
-        # Crear una animación personalizada para el color de fondo
-        self.animation = QPropertyAnimation(button, b"styleSheet")
-        self.animation.setDuration(10000)  # Duración de la animación
-        self.animation.setStartValue("QPushButton { background-color: white; color: navy; }")
-        self.animation.setEndValue("QPushButton { background-color: navy; color: white; }")
-        self.animation.setEasingCurve(QEasingCurve.Type.InOutQuad)
-
-        # Configurar eventos de hover
-        button.enterEvent = self.create_enter_event(self.animation, button)
-        button.leaveEvent = self.create_leave_event(self.animation, button)
-
-    def create_enter_event(self, animation, button):
-        def enter_event(event):
-            animation.start()
-        return enter_event
-
-    def create_leave_event(self, animation, button):
-        def leave_event(event):
-            animation.stop()
-            # Restablecer el estilo cuando el ratón salga
-            button.setStyleSheet("QPushButton { background-color: white; color: navy; }")
-        return leave_event
-
-    def create_leave_event(self, animation, button):
-        def leave_event(event):
-            animation.stop()
-            button.setStyleSheet("""
+        for name in ["Inicio", "Búsqueda", "Filtros"]:
+            btn = QPushButton(name)
+            btn.setStyleSheet("""
                 QPushButton {
-                    border: 2px solid navy;
-                    background-color: white;
-                    color: navy;
-                    padding: 6px 15px;
-                    border-radius: 5px;
+                    background-color: #1E5580;
+                    color: white;
+                    padding: 10px 20px;
+                    border-radius: 10px;
+                    font-weight: bold;
                 }
             """)
-        return leave_event
-    
-    def resizeEvent(self, event):
-        """Detecta cambios en el tamaño de la ventana y ajusta la UI."""
-        width = self.width()
-        if width < 600:
-            self.setStyleSheet("QWidget { font-size: 12px; }")  # Fuente menor en pantallas pequeñas
-        else:
-            self.setStyleSheet("QWidget { font-size: 14px; }")  # Fuente normal en pantallas grandes
-        super().resizeEvent(event)
+            nav_layout.addWidget(btn)
 
-    def load_stylesheet(self, file_path):
-        """Carga una hoja de estilos externa."""
-        try:
-            with open(file_path, "r") as file:
-                qss = file.read()
-                print("✅ Hoja de estilos cargada correctamente")
-                self.setStyleSheet(qss)
-        except FileNotFoundError:
-            print(f"❌ Error: No se encontró el archivo {file_path}")
-        except Exception as e:
-            print(f"❌ Error al cargar la hoja de estilos: {e}")
+        id_btn = QPushButton("ID")
+        id_btn.setStyleSheet("""
+            QPushButton {
+                background-color: #D63333;
+                color: white;
+                padding: 10px 20px;
+                border-radius: 10px;
+                font-weight: bold;
+            }
+        """)
+        nav_layout.addWidget(id_btn)
+
+        main_layout.addWidget(navbar)
+
+        # Contenido principal con panel lateral
+        content_layout = QHBoxLayout()
+        content_layout.setSpacing(0)
+
+        # Panel lateral
+        sidebar = QFrame()
+        sidebar.setFixedWidth(200)
+        sidebar.setStyleSheet("background-color: #F8F8F8; border-right: 1px solid #ccc;")
+        sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+        sidebar_layout.setContentsMargins(20, 20, 0, 0)
+
+        sidebar_title = QLabel("Opciones de navegación")
+        sidebar_title.setFont(QFont("Arial", 10, QFont.Weight.Normal))
+        sidebar_layout.addWidget(sidebar_title)
+
+        for opt in ["Opción 1", "Opción 2", "Opción 3"]:
+            lbl = QLabel(opt)
+            sidebar_layout.addWidget(lbl)
+
+        content_layout.addWidget(sidebar)
+
+        # Panel principal central
+        center_frame = QFrame()
+        center_layout = QVBoxLayout(center_frame)
+        center_layout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignHCenter)
+        center_layout.setContentsMargins(0, 60, 0, 0)
+
+        welcome = QLabel("BIENVENIDO")
+        welcome.setFont(QFont("Arial", 24, QFont.Weight.Bold))
+        center_layout.addWidget(welcome)
+
+        buttons_layout = QHBoxLayout()
+        buttons_layout.setSpacing(40)
+        buttons_layout.setContentsMargins(0, 40, 0, 0)
+
+        for name in ["Tus proyectos", "Crear nuevo proyecto"]:
+            btn = QPushButton(name)
+            btn.setFixedSize(200, 50)
+            btn.setStyleSheet("""
+                QPushButton {
+                    background-color: #1E5580;
+                    color: white;
+                    border-radius: 12px;
+                    font-weight: bold;
+                }
+            """)
+            buttons_layout.addWidget(btn)
+
+        center_layout.addLayout(buttons_layout)
+
+        content_layout.addWidget(center_frame)
+
+        main_layout.addLayout(content_layout)
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    # Se puede cargar la hoja de estilos desde el archivo style.qss
-    try:
-        app.setStyleSheet(open("style.qss", "r").read())
-    except Exception as e:
-        print(f"❌ Error al cargar style.qss: {e}")
     window = MainWindow()
     window.show()
     sys.exit(app.exec())

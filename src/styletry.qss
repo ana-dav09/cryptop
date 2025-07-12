@@ -1,6 +1,6 @@
 /* --- Barra Superior --- */
 #header {
-    background-color: #2C3E50;
+    background-color:#e42c1f;
     padding: 10px;
     border-radius: 8px;
 }

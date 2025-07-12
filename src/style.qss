@@ -60,7 +60,7 @@ QLineEdit#inputField:focus {
 }
 
 /* 🟦 BOTÓN PRINCIPAL */
-QPushButton#loginButton, QPushButton#registerButton {
+QPushButton#loginButton, QPushButton#registerButton, QPushButton#btn {
     background-color: #3498DB;
     color: white;
     font-size: 16px;
