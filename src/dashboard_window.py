@@ -5,7 +5,7 @@ from barra_lateral import SidebarWidget
 class DashboardWindow(QtWidgets.QWidget):
     # Señales para la navegación del Dashboard
     new_analysis_requested = QtCore.pyqtSignal()
-    load_project_requested = QtCore.pyqtSignal()
+    project_selection_requested = QtCore.pyqtSignal()
     history_requested = QtCore.pyqtSignal()
     settings_requested = QtCore.pyqtSignal()
     logout_requested = QtCore.pyqtSignal()
@@ -79,7 +79,7 @@ class DashboardWindow(QtWidgets.QWidget):
                 background-color: #167DAB;
             }
         """)
-        load_project_btn.clicked.connect(self.load_project_requested.emit)
+        load_project_btn.clicked.connect(self.project_selection_requested.emit)
         action_buttons_layout.addWidget(load_project_btn)
 
         action_buttons_layout.addStretch(1) # Empuja los botones a la izquierda

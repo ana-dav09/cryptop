@@ -1,5 +1,6 @@
 import sys, os, json, subprocess
 from PyQt6 import QtWidgets, QtGui, QtCore
+import firebase_serv
 
 USER_DB = "users.json"
 
@@ -210,8 +211,7 @@ class LoginWindow(QtWidgets.QWidget):
         email = self.email_input.text().strip()
         password = self.password_input.text().strip()
 
-        users = load_users()
-        if email in users and users[email]["password"] == password:
+        if firebase_serv.authenticate_user(email, password):
             QtWidgets.QMessageBox.information(self, "Éxito", "Inicio de sesión correcto. ¡Bienvenido!")
             self.go_to_dashboard.emit()
         else:

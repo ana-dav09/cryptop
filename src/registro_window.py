@@ -1,5 +1,6 @@
 import sys
 import json, os, subprocess
+from firebase_serv import register_user, get_user
 from PyQt6 import QtWidgets, QtGui, QtCore
 
 USER_DB = "users.json"
@@ -184,14 +185,14 @@ class RegistroWindow(QtWidgets.QWidget):
         """)
         return line_edit
 
+
     def register_account(self):
-        """Lógica para registrar una nueva cuenta."""
         email = self.email_input.text()
         names = self.names_input.text()
         lastnames = self.lastnames_input.text()
         password = self.password_input.text()
         confirm_password = self.confirm_password_input.text()
-        # dob = self.dob_input.text() # Obtener la fecha de nacimiento
+        dob = self.dob_input.text()
 
         if not email or not password or not names or not lastnames or not confirm_password:
             QtWidgets.QMessageBox.warning(self, "Error de Registro", "Por favor, complete todos los campos.")
@@ -201,23 +202,13 @@ class RegistroWindow(QtWidgets.QWidget):
             QtWidgets.QMessageBox.warning(self, "Error de Contraseña", "Las contraseñas no coinciden.")
             return
 
-        # --- Aquí iría lógica de conexión con Firebase ---
-        print(f"Registrando usuario: {names} {lastnames}, Correo: {email}")
-        # firebase_service.register_user(email, password, names, lastnames, dob)
-
-        # Si el registro es exitoso:
-        #QtWidgets.QMessageBox.information(self, "Registro Exitoso", "¡Cuenta creada exitosamente! Por favor, inicia sesión.")
-        #self.go_to_login.emit() # Redirige a la pantalla de Login 
-
-
-        # TEMPORAL REGISTRO LOCAL
-        users = load_users()
-        if email in users:
+        # Verificar si ya existe en Firebase
+        if get_user(email):
             QtWidgets.QMessageBox.warning(self, "Error", "Este correo ya está registrado.")
             return
 
-        users[email] = {"name": names, "password": password}
-        save_users(users)
+        # Guardar en Firebase
+        register_user(email, password, names, lastnames, dob)
+
         QtWidgets.QMessageBox.information(self, "Éxito", "Registro exitoso. ¡Ahora puedes iniciar sesión!")
-        self.go_to_login.emit
-        # Si el registro falla, muestra un QMessageBox de error.
+        self.go_to_login.emit()

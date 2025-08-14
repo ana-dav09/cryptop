@@ -3,7 +3,7 @@ from PyQt6 import QtWidgets, QtGui, QtCore
 class SidebarWidget(QtWidgets.QFrame): 
     # Definir todas las señales de navegación
     new_analysis_requested = QtCore.pyqtSignal()
-    load_project_requested = QtCore.pyqtSignal()
+    project_selection_requested = QtCore.pyqtSignal()
     history_requested = QtCore.pyqtSignal()
     settings_requested = QtCore.pyqtSignal()
     information_requested = QtCore.pyqtSignal()
@@ -46,7 +46,7 @@ class SidebarWidget(QtWidgets.QFrame):
 
         # Botones de navegación del sidebar, conectándolos a las señales de esta clase
         self._add_sidebar_button(sidebar_layout, "Nuevo Análisis", self.new_analysis_requested.emit)
-        self._add_sidebar_button(sidebar_layout, "Cargar Proyecto", self.load_project_requested.emit)
+        self._add_sidebar_button(sidebar_layout, "Cargar Proyecto", self.project_selection_requested.emit)
         self._add_sidebar_button(sidebar_layout, "Historial", self.history_requested.emit)
         self._add_sidebar_button(sidebar_layout, "Configuración", self.settings_requested.emit)
         self._add_sidebar_button(sidebar_layout, "Información", self.information_requested.emit)

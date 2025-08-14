@@ -1,0 +1,4 @@
+src/cryptjad-db-firebase.json
+src/firebase_serv.py
+__pycache__/
+*.pyc

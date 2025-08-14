@@ -1,11 +1,14 @@
 import sys
 from PyQt6 import QtWidgets, QtCore
+import firebase_admin
+from firebase_admin import credentials, firestore
 
 from inicio_window import InicioWindow
 from registro_window import RegistroWindow
 from login_window import LoginWindow
 from dashboard_window import DashboardWindow
 from information_window import InformationWindow
+from project_selection_window import ProjectSelectionWindow
 
 class RecuperarPasswordWindow(QtWidgets.QWidget):
     def __init__(self):
@@ -62,6 +65,7 @@ class MainApplicationWindow(QtWidgets.QMainWindow):
         self.new_analysis_screen = NuevoAnalisisWindow()
         self.load_project_screen = LoadProjectWindow()
         self.history_screen = HistoryWindow()
+        self.project_selection_screen = ProjectSelectionWindow()
         self.settings_screen = SettingsWindow()
         self.information_screen = InformationWindow()
 
@@ -79,12 +83,15 @@ class MainApplicationWindow(QtWidgets.QMainWindow):
 
         # CONECTAR LAS SEÑALES DIRECTAMENTE DEL SIDEBAR DEL DASHBOARD
         #self.dashboard_screen.sidebar.new_analysis_requested.connect(self.show_new_analysis_screen)
-        #self.dashboard_screen.sidebar.load_project_requested.connect(self.show_load_project_screen)
-        #self.dashboard_screen.sidebar.history_requested.connect(self.show_history_screen)
+        self.dashboard_screen.sidebar.project_selection_requested.connect(self.show_project_selection_screen)
+        self.dashboard_screen.sidebar.history_requested.connect(self.show_history_screen)
         #self.dashboard_screen.sidebar.settings_requested.connect(self.show_settings_screen)
         self.dashboard_screen.sidebar.information_requested.connect(self.show_information_screen)
         self.dashboard_screen.sidebar.logout_requested.connect(self.show_inicio_screen) # Cerrar sesión
 
+        # CONECTAR LAS SEÑALES DE LA PANTALLA DE SELECCIÓN DE PROYECTO
+        self.project_selection_screen.select_project_requested.connect(self._handle_project_selected)
+        self.project_selection_screen.go_to_history_screen.connect(self.show_history_screen)
 
         # Añadir las pantallas al QStackedWidget
         self.stacked_widget.addWidget(self.inicio_screen)      # Index 0
@@ -92,6 +99,9 @@ class MainApplicationWindow(QtWidgets.QMainWindow):
         self.stacked_widget.addWidget(self.login_screen)       # Index 2
         self.stacked_widget.addWidget(self.dashboard_screen)
         self.stacked_widget.addWidget(self.information_screen)
+        self.stacked_widget.addWidget(self.history_screen)
+        self.stacked_widget.addWidget(self.project_selection_screen)
+
 
         self.show_inicio_screen() # Mostrar la pantalla de inicio al arrancar
 
@@ -109,6 +119,24 @@ class MainApplicationWindow(QtWidgets.QMainWindow):
 
     def show_information_screen(self):
         self.stacked_widget.setCurrentWidget(self.information_screen)
+
+    def show_history_screen(self):
+        self.stacked_widget.setCurrentWidget(self.history_screen)
+
+    def show_project_selection_screen(self):
+        self.stacked_widget.setCurrentWidget(self.project_selection_screen)
+
+    
+
+    # Método para manejar el proyecto seleccionado
+    def _handle_project_selected(self, project_data):
+        QtWidgets.QMessageBox.information(self, "Proyecto Cargado",
+                                          f"¡Proyecto '{project_data['name']}' listo para trabajar!")
+        # Aquí iría la lógica para cargar el proyecto en la siguiente pantalla
+        # Por ejemplo: self.analysis_interface_screen.load_project(project_data)
+        # self.show_analysis_interface_screen()
+        # Por ahora, simplemente volvemos al dashboard
+        self.show_dashboard_screen()
 
 if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
