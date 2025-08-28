@@ -1,7 +1,6 @@
 from PyQt6 import QtWidgets, QtGui, QtCore
 
 class SidebarWidget(QtWidgets.QFrame): 
-    # Definir todas las señales de navegación
     new_analysis_requested = QtCore.pyqtSignal()
     project_selection_requested = QtCore.pyqtSignal()
     history_requested = QtCore.pyqtSignal()
@@ -11,23 +10,33 @@ class SidebarWidget(QtWidgets.QFrame):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setFixedWidth(250) 
+        self.setFixedWidth(260)
         self.setStyleSheet("""
             QFrame {
-                background-color: #264653; /* Azul oscuro */
+                background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #264653, stop:1 #1B2B36);
                 color: white;
-                border-right: 1px solid #333; /* Opcional: un borde para separarla */
+                border-right: 1px solid #333;
             }
             QPushButton {
                 background-color: transparent;
                 border: none;
                 color: white;
                 text-align: left;
-                padding: 15px 20px;
+                padding: 12px 20px;
                 font-size: 16px;
             }
             QPushButton:hover {
-                background-color: #2A9D8F; /* Verde azulado al pasar el ratón */
+                background-color: #2A9D8F;
+                border-radius: 8px;
+            }
+            QLabel#LogoLabel {
+                font-size: 28px;
+                font-weight: bold;
+                color: #F4F4F4;
+            }
+            QFrame#Separator {
+                background-color: #3A5A64;
+                max-height: 1px;
             }
         """)
         self.init_ui()
@@ -37,27 +46,35 @@ class SidebarWidget(QtWidgets.QFrame):
         sidebar_layout.setContentsMargins(0, 20, 0, 20)
         sidebar_layout.setSpacing(10)
 
-        # Logo/Título en el sidebar
+        # Logo/Título
         sidebar_logo_label = QtWidgets.QLabel("CryptJAD")
-        sidebar_logo_label.setFont(QtGui.QFont("Arial", 28, QtGui.QFont.Weight.Bold))
+        sidebar_logo_label.setObjectName("LogoLabel")
         sidebar_logo_label.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-        sidebar_logo_label.setContentsMargins(0, 0, 0, 30) # Espacio inferior
+        sidebar_logo_label.setContentsMargins(0, 0, 0, 30)
         sidebar_layout.addWidget(sidebar_logo_label)
 
-        # Botones de navegación del sidebar, conectándolos a las señales de esta clase
-        self._add_sidebar_button(sidebar_layout, "Nuevo Análisis", self.new_analysis_requested.emit)
-        self._add_sidebar_button(sidebar_layout, "Cargar Proyecto", self.project_selection_requested.emit)
-        self._add_sidebar_button(sidebar_layout, "Historial", self.history_requested.emit)
-        self._add_sidebar_button(sidebar_layout, "Configuración", self.settings_requested.emit)
-        self._add_sidebar_button(sidebar_layout, "Información", self.information_requested.emit)
+        # Sección principal
+        self._add_sidebar_button(sidebar_layout, "Nuevo Análisis", self.new_analysis_requested.emit, "📑")
+        self._add_sidebar_button(sidebar_layout, "Cargar Proyecto", self.project_selection_requested.emit, "📂")
+        self._add_sidebar_button(sidebar_layout, "Historial", self.history_requested.emit, "📜")
+        self._add_sidebar_button(sidebar_layout, "Configuración", self.settings_requested.emit, "⚙️")
+        self._add_sidebar_button(sidebar_layout, "Información", self.information_requested.emit, "ℹ️")
 
-        sidebar_layout.addStretch(1) # Empuja los botones hacia arriba
+        # Separador
+        separator = QtWidgets.QFrame()
+        separator.setObjectName("Separator")
+        sidebar_layout.addWidget(separator)
 
-        self._add_sidebar_button(sidebar_layout, "Cerrar sesión", self.logout_requested.emit)
+        sidebar_layout.addStretch(1)
 
-    def _add_sidebar_button(self, layout, text, connection_slot):
-        """Helper para añadir botones al sidebar."""
-        btn = QtWidgets.QPushButton(text, self)
+        # Logout destacado en la parte inferior
+        self._add_sidebar_button(sidebar_layout, "Cerrar sesión", self.logout_requested.emit, "🚪")
+
+    def _add_sidebar_button(self, layout, text, connection_slot, icon_text=""):
+        """Helper para añadir botones al sidebar con icono opcional."""
+        btn = QtWidgets.QPushButton(f"{icon_text}  {text}")
         btn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
+        btn.setFont(QtGui.QFont("Segoe UI", 14))
+        btn.setMinimumHeight(40)
         btn.clicked.connect(connection_slot)
         layout.addWidget(btn)

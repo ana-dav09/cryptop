@@ -3,122 +3,178 @@ from PyQt6 import QtWidgets, QtGui, QtCore
 from barra_lateral import SidebarWidget
 
 class DashboardWindow(QtWidgets.QWidget):
-    # Señales para la navegación del Dashboard
     new_analysis_requested = QtCore.pyqtSignal()
     project_selection_requested = QtCore.pyqtSignal()
     history_requested = QtCore.pyqtSignal()
     settings_requested = QtCore.pyqtSignal()
     logout_requested = QtCore.pyqtSignal()
-    information_requested = QtCore.pyqtSignal() # Nueva señal para la pantalla de información
+    information_requested = QtCore.pyqtSignal()
 
     def __init__(self):
         super().__init__()
         self.setWindowTitle("CryptJAD - Dashboard")
-        self.setGeometry(50, 50, 1000, 700)
+        self.setGeometry(50, 50, 1200, 800)
         self.init_ui()
 
     def init_ui(self):
+        self.setStyleSheet("background-color: #F5F6FA;")
         main_layout = QtWidgets.QHBoxLayout(self)
-        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setContentsMargins(0,0,0,0)
         main_layout.setSpacing(0)
 
-        # --- Sidebar (Barra Lateral) ---
-        self.sidebar = SidebarWidget(self) # Creamos una instancia de nuestra barra lateral reusable
+        # --- Sidebar ---
+        self.sidebar = SidebarWidget(self)
         main_layout.addWidget(self.sidebar)
 
-        # --- Contenido Principal del Dashboard ---
+        # --- Contenido Principal ---
         content_area = QtWidgets.QFrame(self)
         content_area.setStyleSheet("background-color: #F8F9FA;")
         content_layout = QtWidgets.QVBoxLayout(content_area)
-        content_layout.setContentsMargins(40, 30, 40, 30)
-        content_layout.setSpacing(20)
+        content_layout.setContentsMargins(40,30,40,30)
+        content_layout.setSpacing(25)
 
-        # Título de bienvenida (primero)
+        # Bienvenida
         welcome_label = QtWidgets.QLabel("Bienvenido, [Nombre de Usuario]")
-        welcome_label.setFont(QtGui.QFont("Arial", 24, QtGui.QFont.Weight.Bold))
-        welcome_label.setStyleSheet("color: #333;")
-        content_layout.addWidget(welcome_label, alignment=QtCore.Qt.AlignmentFlag.AlignHCenter)
+        welcome_label.setFont(QtGui.QFont("Segoe UI", 26, QtGui.QFont.Weight.Bold))
+        welcome_label.setStyleSheet("color: #1F3C88;")
+        content_layout.addWidget(welcome_label, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)
 
-        status_label = QtWidgets.QLabel("Aquí puedes gestionar tus proyectos y realizar nuevos análisis.")
-        status_label.setFont(QtGui.QFont("Arial", 16))
+        status_label = QtWidgets.QLabel("Gestiona tus proyectos y realiza nuevos análisis de manera eficiente.")
+        status_label.setFont(QtGui.QFont("Segoe UI", 16))
         status_label.setStyleSheet("color: #555;")
-        content_layout.addWidget(status_label)
+        content_layout.addWidget(status_label, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)
 
-        # --- Botones de Acción (Nuevo Análisis y Cargar Proyecto) ---
-        action_buttons_layout = QtWidgets.QHBoxLayout()
-        action_buttons_layout.setSpacing(40) # Espacio entre los botones
+        # --- Estadísticas rápidas ---
+        stats_layout = QtWidgets.QHBoxLayout()
+        stats_layout.setSpacing(20)
+        stats_data = [
+            ("Total Proyectos", "12"),
+            ("Proyectos Activos", "5"),
+            ("Análisis Completados", "7"),
+            ("Análisis Pendientes", "3")
+        ]
+        for title, value in stats_data:
+            card = QtWidgets.QFrame()
+            card.setFixedSize(220,100)
+            card.setStyleSheet("""
+                QFrame {
+                    background-color: white;
+                    border-radius: 15px;
+                    border: 1px solid #D3D3D3;
+                }
+            """)
+            card_layout = QtWidgets.QVBoxLayout(card)
+            card_layout.setContentsMargins(15,15,15,15)
+            lbl_value = QtWidgets.QLabel(value)
+            lbl_value.setFont(QtGui.QFont("Segoe UI", 24, QtGui.QFont.Weight.Bold))
+            lbl_value.setStyleSheet("color: #219EBC;")
+            lbl_title = QtWidgets.QLabel(title)
+            lbl_title.setFont(QtGui.QFont("Segoe UI", 12))
+            lbl_title.setStyleSheet("color: #555;")
+            card_layout.addWidget(lbl_value)
+            card_layout.addWidget(lbl_title)
+            stats_layout.addWidget(card)
+        content_layout.addLayout(stats_layout)
 
-        new_analysis_btn = QtWidgets.QPushButton("Nuevo Análisis")
-        new_analysis_btn.setFixedSize(220, 60)
-        new_analysis_btn.setFont(QtGui.QFont("Arial", 12, QtGui.QFont.Weight.Bold))
-        new_analysis_btn.setStyleSheet("""
-             QPushButton {
-                background-color: #219EBC;
-                color: white;
-                border-radius: 25px;
-                padding: 10px 20px;
-            }
-            QPushButton:hover {
-                background-color: #167DAB;
-            }
-        """)
-        new_analysis_btn.clicked.connect(self.new_analysis_requested.emit)
-        action_buttons_layout.addWidget(new_analysis_btn)
+        # --- Accesos rápidos ---
+        quick_layout = QtWidgets.QHBoxLayout()
+        quick_layout.setSpacing(20)
+        quick_actions = [
+            ("Nuevo Análisis", self.new_analysis_requested.emit, "#219EBC"),
+            ("Tus Proyectos", self.project_selection_requested.emit, "#1F7A8C"),
+            ("Historial", self.history_requested.emit, "#264653"),
+            ("Configuración", self.settings_requested.emit, "#6A0572")
+        ]
+        for text, callback, color in quick_actions:
+            btn = QtWidgets.QPushButton(text)
+            btn.setFixedSize(180, 50)
+            btn.setFont(QtGui.QFont("Segoe UI", 12, QtGui.QFont.Weight.Bold))
+            btn.setStyleSheet(f"""
+                QPushButton {{
+                    background-color: {color};
+                    color: white;
+                    border-radius: 25px;
+                }}
+                QPushButton:hover {{
+                    background-color: #167DAB;
+                }}
+            """)
+            btn.clicked.connect(callback)
+            quick_layout.addWidget(btn)
+        content_layout.addLayout(quick_layout)
 
-        load_project_btn = QtWidgets.QPushButton("Tus proyectos")
-        load_project_btn.setFixedSize(220, 60)
-        load_project_btn.setFont(QtGui.QFont("Arial", 12, QtGui.QFont.Weight.Bold))
-        load_project_btn.setStyleSheet("""
-             QPushButton {
-                background-color: #219EBC;
-                color: white;
-                border-radius: 25px;
-                padding: 10px 20px;
-            }
-            QPushButton:hover {
-                background-color: #167DAB;
-            }
-        """)
-        load_project_btn.clicked.connect(self.project_selection_requested.emit)
-        action_buttons_layout.addWidget(load_project_btn)
+        # --- Proyectos recientes como tarjetas ---
+        recent_label = QtWidgets.QLabel("Proyectos Recientes")
+        recent_label.setFont(QtGui.QFont("Segoe UI", 22, QtGui.QFont.Weight.Bold))
+        recent_label.setStyleSheet("color: #333;")
+        content_layout.addWidget(recent_label)
 
-        action_buttons_layout.addStretch(1) # Empuja los botones a la izquierda
+        recent_layout = QtWidgets.QHBoxLayout()
+        recent_layout.setSpacing(20)
+        dummy_projects = [
+            "AES - 20/06/2024",
+            "DES Diferencial - 15/06/2024",
+            "Algoritmo Custom - 01/06/2024",
+            "RSA Avanzado - 10/05/2024"
+        ]
+        for proj in dummy_projects:
+            card = QtWidgets.QFrame()
+            card.setFixedSize(220,140)
+            card.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
+            card.setStyleSheet("""
+                QFrame {
+                    background-color: white;
+                    border-radius: 12px;
+                    border: 1px solid #D3D3D3;
+                }
+                QFrame:hover {
+                    border: 2px solid #219EBC;
+                }
+            """)
+            card_layout = QtWidgets.QVBoxLayout(card)
+            lbl_name = QtWidgets.QLabel(proj)
+            lbl_name.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
+            lbl_name.setStyleSheet("color: #333;")
+            card_layout.addWidget(lbl_name)
+            card_layout.addStretch(1)
+            recent_layout.addWidget(card)
+        content_layout.addLayout(recent_layout)
 
-        content_layout.addLayout(action_buttons_layout)
-        content_layout.addSpacing(30) # Espacio entre botones de acción y proyectos recientes
+        # --- Log de actividad ---
+        log_label = QtWidgets.QLabel("Últimas Actividades")
+        log_label.setFont(QtGui.QFont("Segoe UI", 18, QtGui.QFont.Weight.Bold))
+        log_label.setStyleSheet("color: #333;")
+        content_layout.addWidget(log_label)
 
-        # Sección de "Últimos Proyectos" (debajo de los botones de acción)
-        latest_projects_label = QtWidgets.QLabel("Últimos Proyectos")
-        latest_projects_label.setFont(QtGui.QFont("Arial", 24, QtGui.QFont.Weight.Bold))
-        latest_projects_label.setContentsMargins(0, 0, 0, 10) # Ajuste de margen
-        content_layout.addWidget(latest_projects_label)
-
-        projects_list_widget = QtWidgets.QListWidget(self)
-        projects_list_widget.addItem("Proyecto Criptoanálisis AES - 20/06/2024")
-        projects_list_widget.addItem("Análisis Diferencial DES - 15/06/2024")
-        projects_list_widget.addItem("Prueba Algoritmo Personalizado - 01/06/2024")
-        projects_list_widget.setFont(QtGui.QFont("Arial", 14))
-        projects_list_widget.setStyleSheet("""
+        log_widget = QtWidgets.QListWidget()
+        log_widget.addItems([
+            "Proyecto AES creado",
+            "Análisis DES completado",
+            "Nuevo usuario registrado"
+        ])
+        log_widget.setFont(QtGui.QFont("Segoe UI", 12))
+        log_widget.setStyleSheet("""
             QListWidget {
-                border: 1px solid #D3D3D3;
-                border-radius: 8px;
+                border: 1px solid #E0E0E0;
+                border-radius: 12px;
                 background-color: white;
             }
             QListWidget::item {
                 padding: 10px;
-                border-bottom: 1px solid #EDEDED;
+                border-bottom: 1px solid #F0F0F0;
             }
             QListWidget::item:hover {
                 background-color: #E0F2F7;
             }
         """)
-        content_layout.addWidget(projects_list_widget, stretch=1)
+        content_layout.addWidget(log_widget, stretch=1)
 
         content_layout.addStretch(1)
-
         main_layout.addWidget(content_area, stretch=1)
 
-    def _add_sidebar_button(self, layout, text, connection_slot):
-        btn = QtWidgets.QPushButton(text, self)
-        btn.clicked.connect(connection_slot)
-        layout.addWidget(btn)
+
+if __name__ == "__main__":
+    app = QtWidgets.QApplication(sys.argv)
+    window = DashboardWindow()
+    window.show()
+    sys.exit(app.exec())

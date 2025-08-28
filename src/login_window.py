@@ -143,14 +143,16 @@ class LoginWindow(QtWidgets.QWidget):
         login_btn.setFont(QtGui.QFont("Arial", 16))
         login_btn.setStyleSheet("""
             QPushButton {
-                background-color: #219EBC;
-                color: white;
-                border-radius: 25px;
-                padding: 10px 20px;
-            }
-            QPushButton:hover {
-                background-color: #167DAB;
-            }
+            background-color: #e42c1f;
+            color: white;
+            border-radius: 25px;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        QPushButton:hover {
+            background-color: #c9302c;
+        }
         """)
         login_btn.clicked.connect(self.login_account)
         form_layout.addWidget(login_btn, alignment=QtCore.Qt.AlignmentFlag.AlignCenter)
