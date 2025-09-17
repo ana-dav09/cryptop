@@ -40,45 +40,61 @@ class DashboardWindow(QtWidgets.QWidget):
         content_layout.addWidget(welcome_label, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)
 
         status_label = QtWidgets.QLabel("Gestiona tus proyectos y realiza nuevos análisis de manera eficiente.")
-        status_label.setFont(QtGui.QFont("Segoe UI", 16))
-        status_label.setStyleSheet("color: #555;")
+        status_label.setFont(QtGui.QFont("Segoe UI", 15))
+        status_label.setStyleSheet("color: #555; margin-bottom:15px;")
         content_layout.addWidget(status_label, alignment=QtCore.Qt.AlignmentFlag.AlignLeft)
 
-        # --- Estadísticas rápidas ---
-        stats_layout = QtWidgets.QHBoxLayout()
-        stats_layout.setSpacing(20)
+        # --- Área principal dividida ---
+        main_split = QtWidgets.QHBoxLayout()
+        main_split.setSpacing(30)
+
+        # === Columna izquierda ===
+        left_col = QtWidgets.QVBoxLayout()
+        left_col.setSpacing(25)
+
+        # Estadísticas rápidas
+        stats_label = QtWidgets.QLabel("Resumen")
+        stats_label.setFont(QtGui.QFont("Segoe UI", 20, QtGui.QFont.Weight.Bold))
+        stats_label.setStyleSheet("color:#333;")
+        left_col.addWidget(stats_label)
+
+        stats_grid = QtWidgets.QGridLayout()
+        stats_grid.setSpacing(15)
         stats_data = [
             ("Total Proyectos", "12"),
-            ("Proyectos Activos", "5"),
-            ("Análisis Completados", "7"),
-            ("Análisis Pendientes", "3")
+            ("Activos", "5"),
+            ("Completados", "7"),
+            ("Pendientes", "3")
         ]
-        for title, value in stats_data:
+        for i, (title, value) in enumerate(stats_data):
             card = QtWidgets.QFrame()
-            card.setFixedSize(220,100)
+            card.setFixedSize(150,90)
             card.setStyleSheet("""
                 QFrame {
                     background-color: white;
-                    border-radius: 15px;
+                    border-radius: 12px;
                     border: 1px solid #D3D3D3;
                 }
             """)
             card_layout = QtWidgets.QVBoxLayout(card)
-            card_layout.setContentsMargins(15,15,15,15)
+            card_layout.setContentsMargins(10,10,10,10)
             lbl_value = QtWidgets.QLabel(value)
-            lbl_value.setFont(QtGui.QFont("Segoe UI", 24, QtGui.QFont.Weight.Bold))
+            lbl_value.setFont(QtGui.QFont("Segoe UI", 20, QtGui.QFont.Weight.Bold))
             lbl_value.setStyleSheet("color: #219EBC;")
             lbl_title = QtWidgets.QLabel(title)
-            lbl_title.setFont(QtGui.QFont("Segoe UI", 12))
+            lbl_title.setFont(QtGui.QFont("Segoe UI", 11))
             lbl_title.setStyleSheet("color: #555;")
             card_layout.addWidget(lbl_value)
             card_layout.addWidget(lbl_title)
-            stats_layout.addWidget(card)
-        content_layout.addLayout(stats_layout)
+            stats_grid.addWidget(card, i//2, i%2)
+        left_col.addLayout(stats_grid)
 
-        # --- Accesos rápidos ---
-        quick_layout = QtWidgets.QHBoxLayout()
-        quick_layout.setSpacing(20)
+        # Accesos rápidos
+        quick_label = QtWidgets.QLabel("Accesos rápidos")
+        quick_label.setFont(QtGui.QFont("Segoe UI", 20, QtGui.QFont.Weight.Bold))
+        quick_label.setStyleSheet("color:#333; margin-top:20px;")
+        left_col.addWidget(quick_label)
+
         quick_actions = [
             ("Nuevo Análisis", self.new_analysis_requested.emit, "#219EBC"),
             ("Tus Proyectos", self.project_selection_requested.emit, "#1F7A8C"),
@@ -87,64 +103,62 @@ class DashboardWindow(QtWidgets.QWidget):
         ]
         for text, callback, color in quick_actions:
             btn = QtWidgets.QPushButton(text)
-            btn.setFixedSize(180, 50)
+            btn.setFixedHeight(45)
             btn.setFont(QtGui.QFont("Segoe UI", 12, QtGui.QFont.Weight.Bold))
             btn.setStyleSheet(f"""
                 QPushButton {{
                     background-color: {color};
                     color: white;
-                    border-radius: 25px;
+                    border-radius: 20px;
                 }}
                 QPushButton:hover {{
                     background-color: #167DAB;
                 }}
             """)
             btn.clicked.connect(callback)
-            quick_layout.addWidget(btn)
-        content_layout.addLayout(quick_layout)
+            left_col.addWidget(btn)
 
-        # --- Proyectos recientes como tarjetas ---
+        left_col.addStretch(1)
+
+        # === Columna derecha ===
+        right_col = QtWidgets.QVBoxLayout()
+        right_col.setSpacing(25)
+
+        # Proyectos recientes
         recent_label = QtWidgets.QLabel("Proyectos Recientes")
-        recent_label.setFont(QtGui.QFont("Segoe UI", 22, QtGui.QFont.Weight.Bold))
+        recent_label.setFont(QtGui.QFont("Segoe UI", 20, QtGui.QFont.Weight.Bold))
         recent_label.setStyleSheet("color: #333;")
-        content_layout.addWidget(recent_label)
+        right_col.addWidget(recent_label)
 
-        recent_layout = QtWidgets.QHBoxLayout()
-        recent_layout.setSpacing(20)
-        dummy_projects = [
+        recent_list = QtWidgets.QListWidget()
+        recent_list.addItems([
             "AES - 20/06/2024",
             "DES Diferencial - 15/06/2024",
             "Algoritmo Custom - 01/06/2024",
             "RSA Avanzado - 10/05/2024"
-        ]
-        for proj in dummy_projects:
-            card = QtWidgets.QFrame()
-            card.setFixedSize(220,140)
-            card.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
-            card.setStyleSheet("""
-                QFrame {
-                    background-color: white;
-                    border-radius: 12px;
-                    border: 1px solid #D3D3D3;
-                }
-                QFrame:hover {
-                    border: 2px solid #219EBC;
-                }
-            """)
-            card_layout = QtWidgets.QVBoxLayout(card)
-            lbl_name = QtWidgets.QLabel(proj)
-            lbl_name.setFont(QtGui.QFont("Segoe UI", 14, QtGui.QFont.Weight.Bold))
-            lbl_name.setStyleSheet("color: #333;")
-            card_layout.addWidget(lbl_name)
-            card_layout.addStretch(1)
-            recent_layout.addWidget(card)
-        content_layout.addLayout(recent_layout)
+        ])
+        recent_list.setFont(QtGui.QFont("Segoe UI", 12))
+        recent_list.setStyleSheet("""
+            QListWidget {
+                border: 1px solid #E0E0E0;
+                border-radius: 10px;
+                background-color: white;
+            }
+            QListWidget::item {
+                padding: 12px;
+                border-bottom: 1px solid #F0F0F0;
+            }
+            QListWidget::item:hover {
+                background-color: #E0F2F7;
+            }
+        """)
+        right_col.addWidget(recent_list, stretch=2)
 
-        # --- Log de actividad ---
+        # Log de actividad
         log_label = QtWidgets.QLabel("Últimas Actividades")
-        log_label.setFont(QtGui.QFont("Segoe UI", 18, QtGui.QFont.Weight.Bold))
-        log_label.setStyleSheet("color: #333;")
-        content_layout.addWidget(log_label)
+        log_label.setFont(QtGui.QFont("Segoe UI", 20, QtGui.QFont.Weight.Bold))
+        log_label.setStyleSheet("color: #333; margin-top:10px;")
+        right_col.addWidget(log_label)
 
         log_widget = QtWidgets.QListWidget()
         log_widget.addItems([
@@ -156,7 +170,7 @@ class DashboardWindow(QtWidgets.QWidget):
         log_widget.setStyleSheet("""
             QListWidget {
                 border: 1px solid #E0E0E0;
-                border-radius: 12px;
+                border-radius: 10px;
                 background-color: white;
             }
             QListWidget::item {
@@ -167,9 +181,13 @@ class DashboardWindow(QtWidgets.QWidget):
                 background-color: #E0F2F7;
             }
         """)
-        content_layout.addWidget(log_widget, stretch=1)
+        right_col.addWidget(log_widget, stretch=2)
 
-        content_layout.addStretch(1)
+        # Añadir columnas al split
+        main_split.addLayout(left_col, stretch=1)
+        main_split.addLayout(right_col, stretch=2)
+        content_layout.addLayout(main_split)
+
         main_layout.addWidget(content_area, stretch=1)
 
 

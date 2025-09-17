@@ -203,3 +203,9 @@ class RegistroWindow(QtWidgets.QWidget):
         QtWidgets.QMessageBox.information(self, "Éxito", "Registro exitoso. ¡Ahora puedes iniciar sesión!")
         self.go_to_login.emit()
 
+
+if __name__ == "__main__":
+    app = QtWidgets.QApplication(sys.argv)
+    window = RegistroWindow()
+    window.show()
+    sys.exit(app.exec())

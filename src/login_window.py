@@ -227,3 +227,10 @@ class LoginWindow(QtWidgets.QWidget):
     def request_register(self):
         """Emite una señal para indicar que se desea ir a la pantalla de registro."""
         self.go_to_register.emit()
+
+
+if __name__ == "__main__":
+    app = QtWidgets.QApplication(sys.argv)
+    window = LoginWindow()
+    window.show()
+    sys.exit(app.exec())
