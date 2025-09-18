@@ -1,4 +1,4 @@
-# cryptjad_attack_window.py
+
 import os
 import sys
 import json
@@ -48,7 +48,7 @@ class MplCanvas(FigureCanvas):
 
 # ----------------- QThread runner para ejecutar Sage -----------------
 class SageRunner(QtCore.QThread):
-    finished = QtCore.pyqtSignal(object, str)   # (data_dict_or_error, script_dir)
+    finished = QtCore.pyqtSignal(object, str)   
 
     def __init__(self, cmd_list, script_dir):
         super().__init__()
@@ -68,12 +68,11 @@ class SageRunner(QtCore.QThread):
             self.finished.emit({"error": proc.stderr.strip() or f"Exit code {proc.returncode}"}, self.script_dir)
             return
 
-        # intentar parsear JSON (el script Sage debe imprimir JSON clean)
+        # intentar parsear JSON (el script Sage debe imprimir JSON)
         try:
             data = json.loads(proc.stdout)
             self.finished.emit(data, self.script_dir)
         except Exception as e:
-            # si no pudo parsear JSON, devolver stdout/stderr para diagnosticar
             out = proc.stdout.strip()
             err = proc.stderr.strip()
             combined = {"error": f"JSON parse error: {str(e)}", "stdout": out, "stderr": err}
@@ -88,7 +87,7 @@ class AttackWindow(QtWidgets.QWidget):
         self.resize(1200, 780)
 
         # ---- Configura rutas y comando Sage ----
-        self.SCRIPT_DIR = "/mnt/c/Users/hp/Desktop/diseno/integracion"  # <-- ajustar si hace falta
+        self.SCRIPT_DIR = "/mnt/c/Users/hp/Desktop/diseno/integracion"  # ajustar si hace falta
 
         self.SAGE_CMD_TEMPLATE = ["wsl", "-d", "debian", "bash", "-lc", "sage -python {script}"]
 
@@ -105,7 +104,6 @@ class AttackWindow(QtWidgets.QWidget):
             self.sidebar = SidebarWidget(self)
             main_layout.addWidget(self.sidebar)
         else:
-            # placeholder slim sidebar to keep layout
             spacer = QtWidgets.QFrame()
             spacer.setFixedWidth(12)
             main_layout.addWidget(spacer)
@@ -123,7 +121,7 @@ class AttackWindow(QtWidgets.QWidget):
         header.setStyleSheet("color: #0f172a;")
         content_layout.addWidget(header)
 
-        # Buttons row
+        # Botones
         btn_row = QtWidgets.QHBoxLayout()
         self.diffButton = QtWidgets.QPushButton("▶ Ejecutar Ataque Diferencial")
         self.linearButton = QtWidgets.QPushButton("▶ Ejecutar Ataque Lineal")
@@ -145,12 +143,11 @@ class AttackWindow(QtWidgets.QWidget):
         btn_row.addStretch()
         content_layout.addLayout(btn_row)
 
-        # Mid area: left = plots, right = table + JSON summary
+        # Area de tabla
         mid_layout = QtWidgets.QHBoxLayout()
         mid_layout.setSpacing(12)
 
-        # Left: plotting canvases (histogram + heatmap stacked)
-        # Left: fixed tables (Bias Matrix + Count Matrix stacked)
+        # Tabla de DL
         tables_widget = QtWidgets.QWidget()
         tables_layout = QtWidgets.QVBoxLayout(tables_widget)
         tables_layout.setSpacing(8)
@@ -165,7 +162,7 @@ class AttackWindow(QtWidgets.QWidget):
 
         mid_layout.addWidget(tables_widget, stretch=2)
 
-        # Right: table and JSON text
+        # Panel derecho: Resultados y llaves candidatas
         right_widget = QtWidgets.QWidget()
         right_layout = QtWidgets.QVBoxLayout(right_widget)
         right_layout.setSpacing(8)
@@ -188,7 +185,7 @@ class AttackWindow(QtWidgets.QWidget):
         mid_layout.addWidget(right_widget, stretch=1)
         content_layout.addLayout(mid_layout)
 
-        # Bottom: status + progress
+        # Progreso....
         bottom_row = QtWidgets.QHBoxLayout()
         self.statusLabel = QtWidgets.QLabel("Listo")
         self.progress = QtWidgets.QProgressBar()
@@ -202,7 +199,7 @@ class AttackWindow(QtWidgets.QWidget):
 
         main_layout.addWidget(content, stretch=1)
 
-        # Signals
+        # Señales
         self.diffButton.clicked.connect(self.on_run_differential)
         self.linearButton.clicked.connect(self.on_run_linear)
 
@@ -213,7 +210,6 @@ class AttackWindow(QtWidgets.QWidget):
     def _build_sage_cmd(self, script_path: str) -> list:
         
         template = list(self.SAGE_CMD_TEMPLATE)  # copia
-        # replace {script} in the last element if present
         new = []
         for token in template:
             if isinstance(token, str) and "{script}" in token:
@@ -228,17 +224,16 @@ class AttackWindow(QtWidgets.QWidget):
             return
 
         cmd = self._build_sage_cmd(script_path)
-        # UI feedback
         self.statusLabel.setText("Ejecutando Sage... (esto puede tardar)")
         self.progress.setVisible(True)
-        self.progress.setRange(0, 0)  # indeterminate
+        self.progress.setRange(0, 0)
 
-        # start thread
+        # Hilo
         self.runner = SageRunner(cmd, os.path.dirname(script_path))
         self.runner.finished.connect(self.on_runner_finished)
         self.runner.start()
 
-    # ----------------- Run actions -----------------
+    # ----------------- Para correr ataques -----------------
     def on_run_differential(self):
         sage_path = "/usr/bin/sage"
         script_path = "/mnt/c/Users/hp/Desktop/diseno/integracion/baby_aes_attack.py"
@@ -342,6 +337,7 @@ class AttackWindow(QtWidgets.QWidget):
 
             self.table.resizeColumnsToContents()
             self.table.resizeRowsToContents()
+            #Llamar función para la tabla DL
             self.load_linear_heatmaps()
 
         except Exception as e:
@@ -357,6 +353,7 @@ class AttackWindow(QtWidgets.QWidget):
             corr_path = os.path.join(BASE_DIR, "corr_matrix.csv")
             prob_path = os.path.join(BASE_DIR, "prob_matrix.csv")
 
+            #Esto es para un gráfico, pero ahorita no
             """
             corr_matrix = np.loadtxt(corr_path, delimiter=",")
             prob_matrix = np.loadtxt(prob_path, delimiter=",")
@@ -411,7 +408,7 @@ class AttackWindow(QtWidgets.QWidget):
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, f"Error cargando {title}", str(e))
 
-    
+    #Función para cargar los datos csv a la tabla dl
     def load_matrix_as_table2(self, path, title):
         """
         Carga un CSV y lo muestra como tabla en un QTableWidget.
@@ -478,7 +475,6 @@ class AttackWindow(QtWidgets.QWidget):
 
         # Error handling
         if "error" in data:
-            # show detailed info if available
             err = data.get("error", "Error desconocido")
             stdout = data.get("stdout", "")
             stderr = data.get("stderr", "")
@@ -487,33 +483,29 @@ class AttackWindow(QtWidgets.QWidget):
             self.statusLabel.setText("Error")
             return
 
-        # If success: data is the JSON produced by the script
         self.statusLabel.setText("Completado")
-        # pretty print JSON summary
         pretty = json.dumps(data, indent=2, ensure_ascii=False)
         self.jsonBox.setText(pretty)
 
-        # Load CSVs if present (linear_counts.csv and corr_matrix.csv are used by linear script)
+        # CSV que contienen la información
         counts_csv = os.path.join(script_dir, "linear_counts.csv")
         corr_csv = os.path.join(script_dir, "corr_matrix.csv")
 
-        # If linear_counts.csv exists, plot top candidates
+        # Tabla de candidatos
         if os.path.exists(counts_csv):
             try:
                 df = pd.read_csv(counts_csv)
-                # expect columns: index, counter, key
                 if 'counter' in df.columns and 'key' in df.columns:
                     df['abs_counter'] = df['counter'].abs()
                     df_sorted = df.sort_values('abs_counter', ascending=False).reset_index(drop=True)
                     self._plot_top_candidates(df_sorted)
                     self._fill_table(df_sorted)
                 else:
-                    # fallback: try to treat whole CSV as simple two columns
+                   
                     pass
             except Exception as e:
                 print("Error leyendo counts CSV:", e)
 
-        # If corr matrix exists, draw heatmap
         if os.path.exists(corr_csv):
             try:
                 corr = np.loadtxt(corr_csv, delimiter=',')
@@ -521,7 +513,7 @@ class AttackWindow(QtWidgets.QWidget):
             except Exception as e:
                 print("Error leyendo corr CSV:", e)
 
-        # If the JSON contains direct arrays for top_candidates, use them to populate table
+        # Llenado de los candidatos de llave
         if 'top_candidates' in data and not os.path.exists(counts_csv):
             try:
                 t = data['top_candidates']
@@ -536,12 +528,11 @@ class AttackWindow(QtWidgets.QWidget):
     # ----------------- Plot / Table helpers -----------------
     def _plot_top_candidates(self, df_sorted: pd.DataFrame, topN: int = 30):
         topN = min(topN, len(df_sorted))
-        top_df = df_sorted.head(topN).iloc[::-1]  # invert for horizontal bars
+        top_df = df_sorted.head(topN).iloc[::-1] 
 
         self.hist_canvas.axes.clear()
         y_positions = np.arange(len(top_df))
         self.hist_canvas.axes.barh(y_positions, top_df['counter'])
-        # show keys as ylabels (may be long)
         self.hist_canvas.axes.set_yticks(y_positions)
         self.hist_canvas.axes.set_yticklabels(top_df['key'].astype(str))
         self.hist_canvas.axes.set_xlabel("Counter")
