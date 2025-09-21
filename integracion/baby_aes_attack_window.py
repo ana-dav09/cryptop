@@ -8,6 +8,10 @@ from typing import Tuple
 from fractions import Fraction
 
 from PyQt6 import QtWidgets, QtGui, QtCore
+from matplotlib.table import Table
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src"))
+
+from export_pdf import ExportPdf
 
 # Matplotlib / pandas / numpy
 import pandas as pd
@@ -340,6 +344,16 @@ class AttackWindow(QtWidgets.QWidget):
             #Llamar función para la tabla DL
             self.load_linear_heatmaps()
 
+            self.pdf = ExportPdf()
+
+            self.pdf.export(
+                "resultados_ataque.pdf",
+                [self.count_table],   # lista de QTableWidgets
+                [self.table],  # opcional
+                resumen=self.jsonBox.toPlainText()  # opcional
+            )
+
+
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, "Error cargando resultados", str(e))
 
@@ -524,6 +538,8 @@ class AttackWindow(QtWidgets.QWidget):
                 self._fill_table(df2)
             except Exception as e:
                 print("Error llenando tabla desde JSON:", e)
+
+
 
     # ----------------- Plot / Table helpers -----------------
     def _plot_top_candidates(self, df_sorted: pd.DataFrame, topN: int = 30):
