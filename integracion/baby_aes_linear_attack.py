@@ -320,7 +320,7 @@ def linear_attack(plaintext_ciphertext_pairs, linear_approximation):
     max_cont = max(keyCounter, key=abs)
     index = keyCounter.index(max_cont)
     key = possible_keys[index]
-    return (possible_keys, keyCounter, key)
+    return (possible_keys, keyCounter, key, index)
 
 # --- Main ---
 agreementMatrix = getAgreementMatrix(subBytes)
@@ -330,18 +330,63 @@ probMatrix = calculateProbMatrix(corrMatrix)
 inputMask1 = ["0010", "0000", "0000", "1000"]
 inputMask3, corr = getLinealAproach(inputMask1, probMatrix, corrMatrix)
 
-plaintext_ciphertext_pairs = readData("plaintext_ciphertext_pairs.csv")
+plaintext_ciphertext_pairs = readData("/mnt/c/Users/hp/Desktop/diseno/integracion/plaintext_ciphertext_pairs.csv")
 linear_approximation = [inputMask1, inputMask3]
 
-possibleKeys, keyCounter, bestKey = linear_attack(plaintext_ciphertext_pairs, linear_approximation)
+possibleKeys, keyCounter, key, best_index = linear_attack(plaintext_ciphertext_pairs, linear_approximation)
+best_key = possibleKeys[best_index]
 
-# --- Exportar resultado como JSON ---
+# --- Exportar CSVs y JSON finales ---
+import os
+
+script_dir = os.path.dirname(os.path.realpath(__file__))
+
+# 1️⃣ CSV de contadores de llaves
+csv_counts_path = os.path.join(script_dir, "linear_counts.csv")
+with open(csv_counts_path, "w", newline='', encoding='utf-8') as f:
+    writer = csv.writer(f)
+    writer.writerow(["index", "counter", "key"])
+    for idx, (k, c) in enumerate(zip(possibleKeys, keyCounter)):
+        writer.writerow([idx, int(c), " ".join(k)])  # k es lista de 4 nibbles "0001"
+
+# 2️⃣ CSV de matriz de correlación
+csv_corr_path = os.path.join(script_dir, "corr_matrix.csv")
+with open(csv_corr_path, "w", newline='', encoding='utf-8') as f:
+    writer = csv.writer(f)
+    for row in corrMatrix:
+        writer.writerow([float(x) for x in row])
+
+# 3️⃣ CSV de matriz de probabilidad
+csv_prob_path = os.path.join(script_dir, "prob_matrix.csv")
+with open(csv_prob_path, "w", newline='', encoding='utf-8') as f:
+    writer = csv.writer(f)
+    for row in probMatrix:
+        writer.writerow([float(x) for x in row])
+
+# 4️⃣ JSON resumen + top-K candidates
+top_k = 20
+# indices de top-K según el valor absoluto del contador
+sorted_idx = sorted(range(len(keyCounter)), key=lambda i: abs(keyCounter[i]), reverse=True)
+top_idx = sorted_idx[:top_k]
+top_candidates = [{"index": i, "counter": int(keyCounter[i]), "key": possibleKeys[i]} for i in top_idx]
+
+# Convertimos las llaves a cadenas concatenadas de 4 bits por nibble
+for c in top_candidates:
+    c["key"] = ["".join(n) for n in c["key"]]
+
 result = {
     "a1": inputMask1,
     "a3": inputMask3,
-    "correlation": abs(corr),
-    "best_key": bestKey,
-    "top_count": max(keyCounter, key=abs)
+    "correlation": float(abs(corr)),
+    "best_key_index": int(best_index),
+    "best_key": ["".join(n) for n in best_key],
+    "top_count": int(max(keyCounter, key=abs)),
+    "top_candidates": top_candidates
 }
 
+json_path = os.path.join(script_dir, "linear_attack_result.json")
+with open(json_path, "w", encoding='utf-8') as f:
+    json.dump(result, f, indent=4)
+
+# Imprime también en consola (útil para PyQt6)
 print(json.dumps(result))
