@@ -27,7 +27,7 @@ def encrypt(x, K):
         Y = aes.mix_columns(Y)
         Y = aes.add_round_key(Y, Kr)
     
-    Kr = aes.key_schedule(Kr, r)
+    Kr = aes.key_schedule(Kr, ROUNDS)
     Y = aes.sub_bytes(Y)
     Y = aes.shift_rows(Y)
     Y = aes.add_round_key(Y, Kr)
