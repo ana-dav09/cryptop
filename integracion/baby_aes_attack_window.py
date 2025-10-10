@@ -441,6 +441,33 @@ class AttackWindow(QtWidgets.QWidget):
 
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, "Error ejecutando ataque lineal", str(e))
+    
+    def run_algebraic(self):
+        #el comando esta para ejecutarse en linux
+        command = ["sage", "baby_aes_algebraic_attack.sage"]
+        try:
+            result = subprocess.run(
+                command,
+                capture_output=True,
+                text=True
+            )
+
+            if result.returncode != 0:
+                QtWidgets.QMessageBox.critical(self, "Error ejecutando Sage", result.stderr)
+                return
+
+            data = json.loads(result.stdout)
+            msg = (
+                "=== Ataque algebraico === \n\n"
+                f"Texto plano conocido: {data['plaintext']}\n"
+                f"Texto cifrado conocido: {data['ciphertext']}\n"
+                f"Llave recuperada: 0x{data['key']}\n"
+                f"Tiempo de ejecución: {data['time']} segundos\n"
+                f"Sat solver utilizado: {data['solver']}\n"
+            )
+            self.resultBox.setText(msg)
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(self, "Error ejecutando ataque algebraico", str(e))
 
     def load_linear_results(self):
         """
