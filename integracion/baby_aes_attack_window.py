@@ -1,4 +1,3 @@
-
 import os
 import sys
 import json
@@ -12,6 +11,8 @@ from matplotlib.table import Table
 sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src"))
 
 from export_pdf import ExportPdf
+from helpers import MplCanvas
+from helpers import SageRunner
 
 # Matplotlib / pandas / numpy
 import pandas as pd
@@ -28,7 +29,7 @@ except Exception:
     try:
         THIS_DIR = os.path.dirname(os.path.abspath(__file__))
         POSSIBLE = [
-            os.path.join(THIS_DIR),  # misma carpeta
+            os.path.join(THIS_DIR),
             os.path.join(THIS_DIR, "..", "src"),
             os.path.join(THIS_DIR, "..", "ui"),
             os.path.join(THIS_DIR, ".."),
@@ -41,63 +42,24 @@ except Exception:
         SidebarWidget = None 
 
 
-# ----------------- Helper: Matplotlib canvas -----------------
-class MplCanvas(FigureCanvas):
-    def __init__(self, parent=None, width=5, height=3, dpi=100):
-        fig = Figure(figsize=(width, height), dpi=dpi, tight_layout=True)
-        self.axes = fig.add_subplot(111)
-        super().__init__(fig)
-        self.setParent(parent)
-
-
-# ----------------- QThread runner para ejecutar Sage -----------------
-class SageRunner(QtCore.QThread):
-    finished = QtCore.pyqtSignal(object, str)   
-
-    def __init__(self, cmd_list, script_dir):
-        super().__init__()
-        self.cmd_list = cmd_list
-        self.script_dir = script_dir
-
-    def run(self):
-        try:
-            # Ejecutar el comando y capturar salida
-            proc = subprocess.run(self.cmd_list, capture_output=True, text=True)
-        except Exception as e:
-            self.finished.emit({"error": str(e)}, self.script_dir)
-            return
-
-        if proc.returncode != 0:
-            # devolver stderr como error
-            self.finished.emit({"error": proc.stderr.strip() or f"Exit code {proc.returncode}"}, self.script_dir)
-            return
-
-        # intentar parsear JSON (el script Sage debe imprimir JSON)
-        try:
-            data = json.loads(proc.stdout)
-            self.finished.emit(data, self.script_dir)
-        except Exception as e:
-            out = proc.stdout.strip()
-            err = proc.stderr.strip()
-            combined = {"error": f"JSON parse error: {str(e)}", "stdout": out, "stderr": err}
-            self.finished.emit(combined, self.script_dir)
-
-
 # ----------------- Ventana principal -----------------
 class AttackWindow(QtWidgets.QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("CryptJAD - Ataques (Diferencial / Lineal)")
+        self.setWindowTitle("CryptJAD - Ataques en BabyAES")
         self.resize(1200, 780)
 
-        # ---- Configura rutas y comando Sage ----
-        self.SCRIPT_DIR = "/mnt/c/Users/hp/Desktop/diseno/integracion"  # ajustar si hace falta
+        # ---- Configurar rutas y comando Sage ----
+        self.SCRIPT_DIR = "/mnt/c/Users/hp/Desktop/diseno/integracion"
 
         self.SAGE_CMD_TEMPLATE = ["wsl", "-d", "debian", "bash", "-lc", "sage -python {script}"]
 
         # nombres de scripts que el sistema invocará
         self.DIFF_SCRIPT = os.path.join(self.SCRIPT_DIR, "baby_aes_attack.py")
         self.LINEAR_SCRIPT = os.path.join(self.SCRIPT_DIR, "baby_aes_linear_attack.py")
+
+        # Variable para almacenar últimos datos
+        self.last_attack_data = None
 
         # ----------------- Layout -----------------
         main_layout = QtWidgets.QHBoxLayout(self)
@@ -119,31 +81,88 @@ class AttackWindow(QtWidgets.QWidget):
         content_layout.setSpacing(12)
 
         # Header
-        header = QtWidgets.QLabel("CryptJAD · Ataques Criptoanalíticos")
+        header = QtWidgets.QLabel("CryptJAD · Ataques en BabyAES")
         header.setFont(QtGui.QFont("Segoe UI", 18, QtGui.QFont.Weight.Bold))
         header.setAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
         header.setStyleSheet("color: #0f172a;")
         content_layout.addWidget(header)
 
+        # Parámetros de configuración
+        params_box = QtWidgets.QGroupBox("Configuración de ataque")
+        form = QtWidgets.QFormLayout()
+
+        self.roundsSpin = QtWidgets.QSpinBox()
+        self.roundsSpin.setRange(1, 10)
+        self.roundsSpin.setValue(3)
+
+        self.pairsSpin = QtWidgets.QSpinBox()
+        self.pairsSpin.setRange(100, 100000)
+        self.pairsSpin.setValue(5000)
+
+        self.maskEdit = QtWidgets.QLineEdit("0010,0000,0000,1000")
+
+        self.topkSpin = QtWidgets.QSpinBox()
+        self.topkSpin.setRange(1, 100)
+        self.topkSpin.setValue(20)
+
+        form.addRow("Número de rondas:", self.roundsSpin)
+        form.addRow("Número de pares:", self.pairsSpin)
+        form.addRow("Máscara inicial:", self.maskEdit)
+        form.addRow("Top-K candidatos:", self.topkSpin)
+
+        params_box.setLayout(form)
+        content_layout.addWidget(params_box)
+
         # Botones
         btn_row = QtWidgets.QHBoxLayout()
         self.diffButton = QtWidgets.QPushButton("▶ Ejecutar Ataque Diferencial")
         self.linearButton = QtWidgets.QPushButton("▶ Ejecutar Ataque Lineal")
-        for b in (self.diffButton, self.linearButton):
+        self.exportButton = QtWidgets.QPushButton("📄 Exportar PDF")
+        
+        for b in (self.diffButton, self.linearButton, self.exportButton):
             b.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
             b.setFixedHeight(42)
-            b.setStyleSheet("""
-                QPushButton {
-                    background-color: #4A90E2;
-                    color: white;
-                    border-radius: 10px;
-                    font-weight: 600;
-                    padding: 8px 18px;
-                }
-                QPushButton:hover { background-color: #357ABD; }
-            """)
+        
+        # Estilos específicos
+        self.diffButton.setStyleSheet("""
+            QPushButton {
+                background-color: #4A90E2;
+                color: white;
+                border-radius: 10px;
+                font-weight: 600;
+                padding: 8px 18px;
+            }
+            QPushButton:hover { background-color: #357ABD; }
+        """)
+        self.linearButton.setStyleSheet("""
+            QPushButton {
+                background-color: #4A90E2;
+                color: white;
+                border-radius: 10px;
+                font-weight: 600;
+                padding: 8px 18px;
+            }
+            QPushButton:hover { background-color: #357ABD; }
+        """)
+        self.exportButton.setStyleSheet("""
+            QPushButton {
+                background-color: #2ECC71;
+                color: white;
+                border-radius: 10px;
+                font-weight: 600;
+                padding: 8px 18px;
+            }
+            QPushButton:hover { background-color: #27AE60; }
+            QPushButton:disabled {
+                background-color: #95a5a6;
+                color: #ecf0f1;
+            }
+        """)
+        self.exportButton.setEnabled(False)  # Deshabilitado inicialmente
+        
         btn_row.addWidget(self.diffButton)
         btn_row.addWidget(self.linearButton)
+        btn_row.addWidget(self.exportButton)
         btn_row.addStretch()
         content_layout.addLayout(btn_row)
 
@@ -156,11 +175,8 @@ class AttackWindow(QtWidgets.QWidget):
         tables_layout = QtWidgets.QVBoxLayout(tables_widget)
         tables_layout.setSpacing(8)
 
-        #self.bias_table = QtWidgets.QTableWidget()
         self.count_table = QtWidgets.QTableWidget()
 
-        #tables_layout.addWidget(QtWidgets.QLabel("Distribución lineal"))
-        #tables_layout.addWidget(self.bias_table, stretch=2)
         tables_layout.addWidget(QtWidgets.QLabel("Correlaciones lineales"))
         tables_layout.addWidget(self.count_table, stretch=2)
 
@@ -206,14 +222,131 @@ class AttackWindow(QtWidgets.QWidget):
         # Señales
         self.diffButton.clicked.connect(self.on_run_differential)
         self.linearButton.clicked.connect(self.on_run_linear)
+        self.exportButton.clicked.connect(self.on_export_pdf)
 
         # Runner holder
         self.runner: SageRunner | None = None
 
+                # --- Estilos globales ---
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #f9fafb;
+                font-family: 'Segoe UI';
+                color: #1e293b;
+            }
+
+            QGroupBox {
+                background-color: white;
+                border: 1px solid #e2e8f0;
+                border-radius: 12px;
+                margin-top: 12px;
+                font-weight: 600;
+                padding: 16px;
+            }
+
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 6px;
+                color: #0f172a;
+                font-size: 14px;
+            }
+
+            QLabel {
+                color: #334155;
+                font-size: 14px;
+            }
+
+            QTableWidget {
+                background-color: white;
+                gridline-color: #cbd5e1;
+                border-radius: 8px;
+                selection-background-color: #dbeafe;
+                selection-color: #0f172a;
+            }
+
+            QHeaderView::section {
+                background-color: #f1f5f9;
+                color: #1e293b;
+                padding: 6px;
+                border: none;
+                font-weight: 600;
+                border-bottom: 1px solid #cbd5e1;
+            }
+
+            QLineEdit, QSpinBox, QTextEdit {
+                background-color: #ffffff;
+                border: 1px solid #cbd5e1;
+                border-radius: 8px;
+                padding: 6px;
+                font-size: 13px;
+            }
+
+            QLineEdit:focus, QSpinBox:focus, QTextEdit:focus {
+                border: 1px solid #3b82f6;
+                outline: none;
+            }
+
+            QPushButton {
+                font-family: 'Segoe UI';
+                font-weight: 600;
+                border-radius: 10px;
+                padding: 8px 18px;
+            }
+
+            QPushButton#diffButton {
+                background-color: #4A90E2;
+                color: white;
+            }
+            QPushButton#diffButton:hover { background-color: #357ABD; }
+
+            QPushButton#linearButton {
+                background-color: #4A90E2;
+                color: white;
+            }
+            QPushButton#linearButton:hover { background-color: #357ABD; }
+
+            QPushButton#exportButton {
+                background-color: #2ECC71;
+                color: white;
+            }
+            QPushButton#exportButton:hover { background-color: #27AE60; }
+            QPushButton#exportButton:disabled {
+                background-color: #95a5a6;
+                color: #ecf0f1;
+            }
+
+            QProgressBar {
+                background-color: #e2e8f0;
+                border: none;
+                border-radius: 6px;
+                height: 10px;
+            }
+
+            QProgressBar::chunk {
+                background-color: #3b82f6;
+                border-radius: 6px;
+            }
+        """)
+
+        # --- Identificadores para botones (para aplicar estilos por ID) ---
+        self.diffButton.setObjectName("diffButton")
+        self.linearButton.setObjectName("linearButton")
+        self.exportButton.setObjectName("exportButton")
+
+        # Bordes suaves y sombra para cajas
+        for box in [params_box, self.count_table, self.table, self.jsonBox]:
+            effect = QtWidgets.QGraphicsDropShadowEffect()
+            effect.setBlurRadius(15)
+            effect.setXOffset(0)
+            effect.setYOffset(2)
+            effect.setColor(QtGui.QColor(0, 0, 0, 40))
+            box.setGraphicsEffect(effect)
+
+
     # ----------------- Helpers -----------------
     def _build_sage_cmd(self, script_path: str) -> list:
-        
-        template = list(self.SAGE_CMD_TEMPLATE)  # copia
+        template = list(self.SAGE_CMD_TEMPLATE)
         new = []
         for token in template:
             if isinstance(token, str) and "{script}" in token:
@@ -272,9 +405,20 @@ class AttackWindow(QtWidgets.QWidget):
         sage_path = "/usr/bin/sage"
         script_path = "/mnt/c/Users/hp/Desktop/diseno/integracion/baby_aes_linear_attack.py"
 
+        rounds = self.roundsSpin.value()
+        pairs = self.pairsSpin.value()
+        mask = self.maskEdit.text()
+        topk = self.topkSpin.value()
+
         try:
             result = subprocess.run(
-                ["wsl", "-d", "debian", sage_path, "-python", script_path],
+                [
+                    "wsl", "-d", "debian", sage_path, "-python", script_path,
+                    "--rounds", str(rounds),
+                    "--pairs", str(pairs),
+                    "--mask", mask,
+                    "--topk", str(topk)
+                ],
                 capture_output=True,
                 text=True
             )
@@ -298,21 +442,15 @@ class AttackWindow(QtWidgets.QWidget):
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, "Error ejecutando ataque lineal", str(e))
 
-
     def load_linear_results(self):
         """
         Carga los CSV y JSON generados por baby_aes_linear_attack.py
         y actualiza self.table y self.jsonBox
         """
         try:
-            # Paths
-            #script_dir = "C:/Users\hp\Desktop\diseno\integracion"
             BASE_DIR = os.path.dirname(os.path.abspath(__file__))
             json_path = os.path.join(BASE_DIR, "linear_attack_result.json")
 
-            # Ejecutar Sage para asegurarnos de que el JSON/CSVs estén actualizados
-            
-            # Ahora intentamos abrir el JSON que el script genera
             if not os.path.exists(json_path):
                 QtWidgets.QMessageBox.critical(self, "Error", f"Archivo no encontrado: {json_path}")
                 return
@@ -320,7 +458,10 @@ class AttackWindow(QtWidgets.QWidget):
             with open(json_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
 
-            # Actualizar JSON summary (igual que antes)
+            # Guardar datos para exportación
+            self.last_attack_data = data
+
+            # Actualizar JSON summary
             best_key_str = " ".join(data["best_key"])
             corr = data["correlation"]
             top_count = data["top_count"]
@@ -341,88 +482,28 @@ class AttackWindow(QtWidgets.QWidget):
 
             self.table.resizeColumnsToContents()
             self.table.resizeRowsToContents()
-            #Llamar función para la tabla DL
+            
+            # Cargar tabla de correlaciones
             self.load_linear_heatmaps()
-
-            self.pdf = ExportPdf()
-
-            self.pdf.export(
-                "resultados_ataque.pdf",
-                [self.count_table],   # lista de QTableWidgets
-                [self.table],  # opcional
-                resumen=self.jsonBox.toPlainText()  # opcional
-            )
-
+            
+            # Habilitar botón de exportación
+            self.exportButton.setEnabled(True)
 
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, "Error cargando resultados", str(e))
 
-
     def load_linear_heatmaps(self):
         """
-        Carga corr_matrix.csv y prob_matrix.csv y dibuja heatmaps en self.heat_canvas
+        Carga corr_matrix.csv y dibuja tabla de correlaciones
         """
         try:
             BASE_DIR = os.path.dirname(os.path.abspath(__file__))
             corr_path = os.path.join(BASE_DIR, "corr_matrix.csv")
-            prob_path = os.path.join(BASE_DIR, "prob_matrix.csv")
-
-            #Esto es para un gráfico, pero ahorita no
-            """
-            corr_matrix = np.loadtxt(corr_path, delimiter=",")
-            prob_matrix = np.loadtxt(prob_path, delimiter=",")
-
-            # Corr Heatmap
-            self.heat_canvas.axes.clear()
-            im = self.heat_canvas.axes.imshow(corr_matrix, cmap="coolwarm", interpolation="nearest")
-            self.heat_canvas.axes.set_title("Matriz de Correlación")
-            self.heat_canvas.axes.set_xlabel("b")
-            self.heat_canvas.axes.set_ylabel("a")
-            self.heat_canvas.figure.colorbar(im, ax=self.heat_canvas.axes)
-            self.heat_canvas.draw()
-
-            # Prob Heatmap en hist_canvas como ejemplo
-            self.hist_canvas.axes.clear()
-            im2 = self.hist_canvas.axes.imshow(prob_matrix, cmap="viridis", interpolation="nearest")
-            self.hist_canvas.axes.set_title("Matriz de Probabilidad")
-            self.hist_canvas.axes.set_xlabel("b")
-            self.hist_canvas.axes.set_ylabel("a")
-            self.hist_canvas.figure.colorbar(im2, ax=self.hist_canvas.axes)
-            self.hist_canvas.draw()
-            """
             self.load_matrix_as_table2(corr_path, "Tabla de Correlación")
-            #self.load_matrix_as_table(prob_path, "Tabla de Probabilidades")
-
 
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, "Error cargando heatmaps", str(e))
 
-
-    def load_matrix_as_table(self, path, title):
-        """
-        Carga un CSV y lo muestra como tabla en un QTableWidget.
-        """
-        try:
-            matrix = np.loadtxt(path, delimiter=",")
-            rows, cols = matrix.shape
-
-            table = QtWidgets.QTableWidget()
-            self.bias_table.setRowCount(rows)
-            self.bias_table.setColumnCount(cols)
-            self.bias_table.setHorizontalHeaderLabels([f"y{j}" for j in range(cols)])
-            self.bias_table.setVerticalHeaderLabels([f"x{i}" for i in range(rows)])
-
-            for i in range(rows):
-                for j in range(cols):
-                    item = QtWidgets.QTableWidgetItem(f"{Fraction(matrix[i,j])}")
-                    item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
-                    self.bias_table.setItem(i, j, item)
-                
-
-        except Exception as e:
-            QtWidgets.QMessageBox.critical(self, f"Error cargando {title}", str(e))
-
-    #Función para cargar los datos csv a la tabla dl
     def load_matrix_as_table2(self, path, title):
         """
         Carga un CSV y lo muestra como tabla en un QTableWidget.
@@ -431,7 +512,6 @@ class AttackWindow(QtWidgets.QWidget):
             matrix = np.loadtxt(path, delimiter=",")
             rows, cols = matrix.shape
 
-            table = QtWidgets.QTableWidget()
             self.count_table.setRowCount(rows)
             self.count_table.setColumnCount(cols)
             self.count_table.setHorizontalHeaderLabels([f"b{j}" for j in range(cols)])
@@ -442,52 +522,82 @@ class AttackWindow(QtWidgets.QWidget):
                     item = QtWidgets.QTableWidgetItem(f"{Fraction(matrix[i,j])}")
                     item.setTextAlignment(QtCore.Qt.AlignmentFlag.AlignCenter)
                     self.count_table.setItem(i, j, item)
-                
 
         except Exception as e:
             QtWidgets.QMessageBox.critical(self, f"Error cargando {title}", str(e))
 
-    def plot_candidates_bar(self, results):
-        """
-        Dibuja gráfica de barras con los candidatos.
-        """
-        self.hist_canvas.axes.clear()
+    def on_export_pdf(self):
+        """Exporta los resultados del ataque a PDF."""
+        if not self.last_attack_data:
+            QtWidgets.QMessageBox.warning(
+                self,
+                "Sin datos",
+                "Primero debes ejecutar un ataque antes de exportar."
+            )
+            return
 
-        candidates = [str(r["candidate"]) for r in results]
-        scores = [r["score"] for r in results]
+        # Diálogo para guardar archivo
+        filename, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self,
+            "Guardar reporte PDF",
+            "resultados_ataque_babyaes.pdf",
+            "PDF Files (*.pdf)"
+        )
+        
+        if not filename:
+            return  # Usuario canceló
 
-        self.hist_canvas.axes.bar(candidates, scores, color="skyblue")
-        self.hist_canvas.axes.set_title("Ranking de Candidatos")
-        self.hist_canvas.axes.set_xlabel("Candidato")
-        self.hist_canvas.axes.set_ylabel("Score")
-        self.hist_canvas.draw()
+        try:
+            pdf = ExportPdf()
+            
+            best_key_str = " ".join(self.last_attack_data["best_key"])
+            
+            metadata = {
+                "Algoritmo": "Baby AES",
+                "Número de rondas": str(self.roundsSpin.value()),
+                "Pares usados": str(self.pairsSpin.value()),
+                "Máscara inicial": self.maskEdit.text(),
+                "Clave parcial recuperada": best_key_str,
+                "Correlación": f"{self.last_attack_data['correlation']:.4f}",
+                "Top contador": str(self.last_attack_data['top_count'])
+            }
 
+            pdf.export(
+                filename,
+                [self.count_table],   # Tabla de correlaciones
+                [self.table],         # Tabla de candidatos
+                metadata
+            )
+            
+            QtWidgets.QMessageBox.information(
+                self,
+                "Exportación exitosa",
+                f"El reporte se guardó correctamente en:\n{filename}"
+            )
+            
+            self.statusLabel.setText(f"PDF exportado: {os.path.basename(filename)}")
 
-    def run_script(self, script):
-        start = time.time()
-        proc = subprocess.run([sys.executable, script], capture_output=True, text=True)
-        end = time.time()
-        duration = end - start
-        return proc.stdout, proc.stderr, duration
-
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(
+                self,
+                "Error al exportar PDF",
+                f"Ocurrió un error durante la exportación:\n{str(e)}"
+            )
+            print("Error en exportación PDF:", e)
 
     def _clear_plots_and_table(self):
-        self.hist_canvas.axes.clear(); self.hist_canvas.draw()
-        self.heat_canvas.axes.clear(); self.heat_canvas.draw()
         self.table.setRowCount(0)
         self.jsonBox.clear()
         self.statusLabel.setText("Listo")
 
     # ----------------- Runner finished handler -----------------
     def on_runner_finished(self, data: dict, script_dir: str):
-        # hide spinner
         self.progress.setVisible(False)
         self.progress.setRange(0, 100)
         self.progress.setValue(100)
         self.load_linear_results()
         self.statusLabel.setText(f"Ataque completado en {self.runner.duration:.2f} segundos")
 
-        # Error handling
         if "error" in data:
             err = data.get("error", "Error desconocido")
             stdout = data.get("stdout", "")
@@ -501,68 +611,28 @@ class AttackWindow(QtWidgets.QWidget):
         pretty = json.dumps(data, indent=2, ensure_ascii=False)
         self.jsonBox.setText(pretty)
 
-        # CSV que contienen la información
         counts_csv = os.path.join(script_dir, "linear_counts.csv")
         corr_csv = os.path.join(script_dir, "corr_matrix.csv")
 
-        # Tabla de candidatos
         if os.path.exists(counts_csv):
             try:
                 df = pd.read_csv(counts_csv)
                 if 'counter' in df.columns and 'key' in df.columns:
                     df['abs_counter'] = df['counter'].abs()
                     df_sorted = df.sort_values('abs_counter', ascending=False).reset_index(drop=True)
-                    self._plot_top_candidates(df_sorted)
                     self._fill_table(df_sorted)
-                else:
-                   
-                    pass
             except Exception as e:
                 print("Error leyendo counts CSV:", e)
 
-        if os.path.exists(corr_csv):
-            try:
-                corr = np.loadtxt(corr_csv, delimiter=',')
-                self._plot_corr_heatmap(corr)
-            except Exception as e:
-                print("Error leyendo corr CSV:", e)
-
-        # Llenado de los candidatos de llave
         if 'top_candidates' in data and not os.path.exists(counts_csv):
             try:
                 t = data['top_candidates']
                 df2 = pd.DataFrame(t)
-                # normalize key representation
                 if 'key' in df2.columns:
                     df2['key'] = df2['key'].apply(lambda k: " ".join(k) if isinstance(k, list) else str(k))
                 self._fill_table(df2)
             except Exception as e:
                 print("Error llenando tabla desde JSON:", e)
-
-
-
-    # ----------------- Plot / Table helpers -----------------
-    def _plot_top_candidates(self, df_sorted: pd.DataFrame, topN: int = 30):
-        topN = min(topN, len(df_sorted))
-        top_df = df_sorted.head(topN).iloc[::-1] 
-
-        self.hist_canvas.axes.clear()
-        y_positions = np.arange(len(top_df))
-        self.hist_canvas.axes.barh(y_positions, top_df['counter'])
-        self.hist_canvas.axes.set_yticks(y_positions)
-        self.hist_canvas.axes.set_yticklabels(top_df['key'].astype(str))
-        self.hist_canvas.axes.set_xlabel("Counter")
-        self.hist_canvas.axes.set_title(f"Top {topN} candidatos (por |counter|)")
-        self.hist_canvas.draw()
-
-    def _plot_corr_heatmap(self, corr: np.ndarray):
-        self.heat_canvas.axes.clear()
-        im = self.heat_canvas.axes.imshow(corr, interpolation='nearest', aspect='auto')
-        self.heat_canvas.axes.set_title("Correlation matrix (S-box)")
-        self.heat_canvas.axes.set_xlabel("Output mask")
-        self.heat_canvas.axes.set_ylabel("Input mask")
-        self.heat_canvas.figure.colorbar(im, ax=self.heat_canvas.axes)
-        self.heat_canvas.draw()
 
     def _fill_table(self, df_sorted: pd.DataFrame, topK: int = 50):
         topK = min(topK, len(df_sorted))

@@ -323,18 +323,44 @@ def linear_attack(plaintext_ciphertext_pairs, linear_approximation):
     return (possible_keys, keyCounter, key, index)
 
 # --- Main ---
-agreementMatrix = getAgreementMatrix(subBytes)
-corrMatrix = calculateCorrMatrix(agreementMatrix)
-probMatrix = calculateProbMatrix(corrMatrix)
+if __name__ == "__main__":
+    import argparse
 
-inputMask1 = ["0010", "0000", "0000", "1000"]
-inputMask3, corr = getLinealAproach(inputMask1, probMatrix, corrMatrix)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--rounds", type=int, default=3)
+    parser.add_argument("--pairs", type=int, default=None)
+    parser.add_argument("--mask", type=str, default="0010,0000,0000,1000")
+    parser.add_argument("--topk", type=int, default=20)
+    parser.add_argument("--inputfile", type=str, default="/mnt/c/Users/hp/Desktop/diseno/integracion/plaintext_ciphertext_pairs.csv")
+    args = parser.parse_args()
 
-plaintext_ciphertext_pairs = readData("/mnt/c/Users/hp/Desktop/diseno/integracion/plaintext_ciphertext_pairs.csv")
-linear_approximation = [inputMask1, inputMask3]
+    # --- Preparación matrices ---
+    agreementMatrix = getAgreementMatrix(subBytes)
+    corrMatrix = calculateCorrMatrix(agreementMatrix)
+    probMatrix = calculateProbMatrix(corrMatrix)
 
-possibleKeys, keyCounter, key, best_index = linear_attack(plaintext_ciphertext_pairs, linear_approximation)
-best_key = possibleKeys[best_index]
+    # --- Máscaras desde argparse ---
+    inputMask1 = args.mask.split(",")
+    inputMask3, corr = getLinealAproach(inputMask1, probMatrix, corrMatrix)
+
+    # --- Pares P-C ---
+    plaintext_ciphertext_pairs = readData(args.inputfile)
+    if args.pairs:  # si se pidió limitar el número de pares
+        plaintext_ciphertext_pairs = plaintext_ciphertext_pairs[:args.pairs]
+
+    linear_approximation = [inputMask1, inputMask3]
+
+    # --- Ejecución ataque ---
+    possibleKeys, keyCounter, key, best_index = linear_attack(
+        plaintext_ciphertext_pairs,
+        linear_approximation
+    )
+    best_key = possibleKeys[best_index]
+
+    # --- Exportar JSON y CSVs (como ya lo tienes) ---
+    # ... aquí dejas igual tu bloque de exportación ...
+    #print(json.dumps(result))
+
 
 # --- Exportar CSVs y JSON finales ---
 import os
