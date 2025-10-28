@@ -1,0 +1,97 @@
+{
+    "pairs_used": 5000,
+    "random_key": "0011100100",
+    "subkey2_real": "11010000",
+    "subkey2_best_guess": "11010000",
+    "best_guess_score": 15101,
+    "s0_best_alpha": "1111",
+    "s0_best_beta": "11",
+    "s0_lat": -12,
+    "s1_best_alpha": "1101",
+    "s1_best_beta": "01",
+    "s1_lat": 12,
+    "s0_top_candidates": [
+        {
+            "k4": "0010",
+            "deviation": -1914,
+            "count_zero": 586
+        },
+        {
+            "k4": "0011",
+            "deviation": -1914,
+            "count_zero": 586
+        },
+        {
+            "k4": "0110",
+            "deviation": -1900,
+            "count_zero": 600
+        },
+        {
+            "k4": "0111",
+            "deviation": -1900,
+            "count_zero": 600
+        },
+        {
+            "k4": "1110",
+            "deviation": -1886,
+            "count_zero": 614
+        },
+        {
+            "k4": "1111",
+            "deviation": -1886,
+            "count_zero": 614
+        },
+        {
+            "k4": "0000",
+            "deviation": -1877,
+            "count_zero": 623
+        },
+        {
+            "k4": "0001",
+            "deviation": -1877,
+            "count_zero": 623
+        }
+    ],
+    "s1_top_candidates": [
+        {
+            "k4": "1000",
+            "deviation": 1935,
+            "count_zero": 4435
+        },
+        {
+            "k4": "1011",
+            "deviation": 1935,
+            "count_zero": 4435
+        },
+        {
+            "k4": "1001",
+            "deviation": 1904,
+            "count_zero": 4404
+        },
+        {
+            "k4": "1010",
+            "deviation": 1904,
+            "count_zero": 4404
+        },
+        {
+            "k4": "0000",
+            "deviation": 1888,
+            "count_zero": 4388
+        },
+        {
+            "k4": "0011",
+            "deviation": 1888,
+            "count_zero": 4388
+        },
+        {
+            "k4": "0001",
+            "deviation": 1868,
+            "count_zero": 4368
+        },
+        {
+            "k4": "0010",
+            "deviation": 1868,
+            "count_zero": 4368
+        }
+    ]
+}

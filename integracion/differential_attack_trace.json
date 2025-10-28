@@ -1,0 +1,65 @@
+{
+  "attack_type": "Differential Cryptanalysis",
+  "algorithm": "Baby AES",
+  "phases": [
+    {
+      "phase": "Fase 1: Construcci\u00f3n de la DDT",
+      "description": "Tabla de distribuci\u00f3n de diferencias calculada",
+      "steps": [
+        {
+          "step": "DDT calculada",
+          "high_probability_differentials": [],
+          "note": "DDT de 16x16 calculada exitosamente"
+        }
+      ]
+    },
+    {
+      "phase": "Fase 2: Trail Diferencial",
+      "description": "Trail de 2 rondas construido",
+      "steps": [
+        {
+          "round": 1,
+          "input_diff": "E000",
+          "probability": 0.0625,
+          "accumulated": 0.0625
+        },
+        {
+          "round": 2,
+          "input_diff": "A0C0",
+          "probability": 0.25,
+          "accumulated": 0.015625
+        },
+        {
+          "final_difference": "A0C0",
+          "total_probability": 0.015625
+        }
+      ]
+    },
+    {
+      "phase": "Fase 3: Candidatos Generados",
+      "description": "256 candidatos de subclave",
+      "steps": [
+        {
+          "total_candidates": 256,
+          "active_positions": [
+            0,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "phase": "Fase 4: An\u00e1lisis Estad\u00edstico",
+      "description": "Mejor candidato aparece 13 veces",
+      "steps": [
+        {
+          "valid_pairs": 118,
+          "discarded_pairs": 906,
+          "best_key_count": 13
+        }
+      ]
+    }
+  ],
+  "rounds": 3,
+  "input_difference": "6008"
+}

@@ -54,11 +54,11 @@ class SidebarWidget(QtWidgets.QFrame):
         sidebar_layout.addWidget(sidebar_logo_label)
 
         # Sección principal
-        self._add_sidebar_button(sidebar_layout, "Nuevo Análisis", self.new_analysis_requested.emit, "📑")
-        self._add_sidebar_button(sidebar_layout, "Cargar Proyecto", self.project_selection_requested.emit, "📂")
-        self._add_sidebar_button(sidebar_layout, "Historial", self.history_requested.emit, "📜")
-        self._add_sidebar_button(sidebar_layout, "Configuración", self.settings_requested.emit, "⚙️")
-        self._add_sidebar_button(sidebar_layout, "Información", self.information_requested.emit, "ℹ️")
+        self._add_sidebar_button(sidebar_layout, "Nuevo Análisis", self.new_analysis_requested, "📑")
+        self._add_sidebar_button(sidebar_layout, "Cargar Proyecto", self.project_selection_requested, "📂")
+        self._add_sidebar_button(sidebar_layout, "Historial", self.history_requested, "📜")
+        self._add_sidebar_button(sidebar_layout, "Configuración", self.settings_requested, "⚙️")
+        self._add_sidebar_button(sidebar_layout, "Información", self.information_requested, "ℹ️")
 
         # Separador
         separator = QtWidgets.QFrame()
@@ -68,13 +68,22 @@ class SidebarWidget(QtWidgets.QFrame):
         sidebar_layout.addStretch(1)
 
         # Logout destacado en la parte inferior
-        self._add_sidebar_button(sidebar_layout, "Cerrar sesión", self.logout_requested.emit, "🚪")
+        self._add_sidebar_button(sidebar_layout, "Cerrar sesión", self.logout_requested, "🚪")
 
-    def _add_sidebar_button(self, layout, text, connection_slot, icon_text=""):
+    # En barra_lateral.py (SidebarWidget)
+    def _add_sidebar_button(self, layout, text, signal_to_emit, icon_text=""):
         """Helper para añadir botones al sidebar con icono opcional."""
         btn = QtWidgets.QPushButton(f"{icon_text}  {text}")
         btn.setCursor(QtGui.QCursor(QtCore.Qt.CursorShape.PointingHandCursor))
         btn.setFont(QtGui.QFont("Segoe UI", 14))
         btn.setMinimumHeight(40)
-        btn.clicked.connect(connection_slot)
+        
+        # Función que imprime y emite
+        def on_click():
+            print(f"🔘 Botón '{text}' clickeado")
+            print(f"🔘 Emitiendo señal: {signal_to_emit}")
+            signal_to_emit.emit()
+            print(f"🔘 Señal emitida")
+        
+        btn.clicked.connect(on_click)
         layout.addWidget(btn)

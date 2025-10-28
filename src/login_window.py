@@ -1,6 +1,6 @@
 import sys, os, json, subprocess
 from PyQt6 import QtWidgets, QtGui, QtCore
-import firebase_serv
+# import firebase_serv  # Comentado para usar almacenamiento local
 
 USER_DB = "users.json"
 
@@ -11,6 +11,14 @@ def load_users():
         with open(USER_DB, "r") as file:
             return json.load(file)
     return {}
+
+
+def authenticate_user_local(email, password):
+    """Autenticación local usando archivo JSON"""
+    users = load_users()
+    if email in users and users[email]["password"] == password:
+        return True
+    return False
 
 
 class LoginWindow(QtWidgets.QWidget):
@@ -190,34 +198,27 @@ class LoginWindow(QtWidgets.QWidget):
         return line_edit
 
     def login_account(self):
-        """Lógica para iniciar sesión."""
-        email = self.email_input.text()
-        password = self.password_input.text()
+        """Lógica para iniciar sesión usando almacenamiento local."""
+        email = self.email_input.text().strip()
+        password = self.password_input.text().strip()
 
         if not email or not password:
             QtWidgets.QMessageBox.warning(self, "Error de Login", "Por favor, ingrese su correo y contraseña.")
             return
 
-        # --- Aquí iría tu lógica de validación con Firebase ---
-        print(f"Intentando iniciar sesión con: {email}")
-        # firebase_service.authenticate_user(email, password)
-
-        # Si la validación es exitosa:
-        #if email == "test@example.com" and password == "password": # Ejemplo
-        #    QtWidgets.QMessageBox.information(self, "Login Exitoso", "¡Bienvenido a CryptJAD!")
-        #    self.go_to_dashboard.emit() # Redirige al Dashboard 
-        #else:
-        #    QtWidgets.QMessageBox.critical(self, "Error de Login", "Correo o contraseña incorrectos.")
-
-        """ Valida el login con la base de datos JSON """
-        email = self.email_input.text().strip()
-        password = self.password_input.text().strip()
-
-        if firebase_serv.authenticate_user(email, password):
+        # --- ALMACENAMIENTO LOCAL ---
+        if authenticate_user_local(email, password):
             QtWidgets.QMessageBox.information(self, "Éxito", "Inicio de sesión correcto. ¡Bienvenido!")
             self.go_to_dashboard.emit()
         else:
             QtWidgets.QMessageBox.warning(self, "Error", "Correo o contraseña incorrectos.")
+
+        # --- FIREBASE (COMENTADO) ---
+        # if firebase_serv.authenticate_user(email, password):
+        #     QtWidgets.QMessageBox.information(self, "Éxito", "Inicio de sesión correcto. ¡Bienvenido!")
+        #     self.go_to_dashboard.emit()
+        # else:
+        #     QtWidgets.QMessageBox.warning(self, "Error", "Correo o contraseña incorrectos.")
 
     # --- Métodos para emitir señales de navegación ---
     def request_login(self):

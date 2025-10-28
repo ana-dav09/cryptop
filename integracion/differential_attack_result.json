@@ -1,0 +1,151 @@
+{
+    "du1": "6008",
+    "du3": "A0C0",
+    "ratio": "1/64",
+    "best_key": "C004",
+    "best_key_binary_compact": "1100000000000100",
+    "best_key_binary_spaced": "1100 0000 0000 0100",
+    "top_count": 13,
+    "top_candidates": [
+        {
+            "index": 98,
+            "counter": 13,
+            "key": "C004",
+            "key_binary_compact": "1100000000000100",
+            "key_binary_spaced": "1100 0000 0000 0100"
+        },
+        {
+            "index": 106,
+            "counter": 8,
+            "key": "C007",
+            "key_binary_compact": "1100000000000111",
+            "key_binary_spaced": "1100 0000 0000 0111"
+        },
+        {
+            "index": 97,
+            "counter": 7,
+            "key": "C002",
+            "key_binary_compact": "1100000000000010",
+            "key_binary_spaced": "1100 0000 0000 0010"
+        },
+        {
+            "index": 178,
+            "counter": 7,
+            "key": "E004",
+            "key_binary_compact": "1110000000000100",
+            "key_binary_spaced": "1110 0000 0000 0100"
+        },
+        {
+            "index": 186,
+            "counter": 5,
+            "key": "E007",
+            "key_binary_compact": "1110000000000111",
+            "key_binary_spaced": "1110 0000 0000 0111"
+        },
+        {
+            "index": 29,
+            "counter": 4,
+            "key": "200D",
+            "key_binary_compact": "0010000000001101",
+            "key_binary_spaced": "0010 0000 0000 1101"
+        },
+        {
+            "index": 111,
+            "counter": 4,
+            "key": "C001",
+            "key_binary_compact": "1100000000000001",
+            "key_binary_spaced": "1100 0000 0000 0001"
+        },
+        {
+            "index": 159,
+            "counter": 4,
+            "key": "A001",
+            "key_binary_compact": "1010000000000001",
+            "key_binary_spaced": "1010 0000 0000 0001"
+        },
+        {
+            "index": 162,
+            "counter": 4,
+            "key": "7004",
+            "key_binary_compact": "0111000000000100",
+            "key_binary_spaced": "0111 0000 0000 0100"
+        },
+        {
+            "index": 21,
+            "counter": 3,
+            "key": "2006",
+            "key_binary_compact": "0010000000000110",
+            "key_binary_spaced": "0010 0000 0000 0110"
+        },
+        {
+            "index": 81,
+            "counter": 3,
+            "key": "6002",
+            "key_binary_compact": "0110000000000010",
+            "key_binary_spaced": "0110 0000 0000 0010"
+        },
+        {
+            "index": 85,
+            "counter": 3,
+            "key": "6006",
+            "key_binary_compact": "0110000000000110",
+            "key_binary_spaced": "0110 0000 0000 0110"
+        },
+        {
+            "index": 93,
+            "counter": 3,
+            "key": "600D",
+            "key_binary_compact": "0110000000001101",
+            "key_binary_spaced": "0110 0000 0000 1101"
+        },
+        {
+            "index": 130,
+            "counter": 3,
+            "key": "5004",
+            "key_binary_compact": "0101000000000100",
+            "key_binary_spaced": "0101 0000 0000 0100"
+        },
+        {
+            "index": 1,
+            "counter": 2,
+            "key": "0002",
+            "key_binary_compact": "0000000000000010",
+            "key_binary_spaced": "0000 0000 0000 0010"
+        },
+        {
+            "index": 2,
+            "counter": 2,
+            "key": "0004",
+            "key_binary_compact": "0000000000000100",
+            "key_binary_spaced": "0000 0000 0000 0100"
+        },
+        {
+            "index": 10,
+            "counter": 2,
+            "key": "0007",
+            "key_binary_compact": "0000000000000111",
+            "key_binary_spaced": "0000 0000 0000 0111"
+        },
+        {
+            "index": 15,
+            "counter": 2,
+            "key": "0001",
+            "key_binary_compact": "0000000000000001",
+            "key_binary_spaced": "0000 0000 0000 0001"
+        },
+        {
+            "index": 17,
+            "counter": 2,
+            "key": "2002",
+            "key_binary_compact": "0010000000000010",
+            "key_binary_spaced": "0010 0000 0000 0010"
+        },
+        {
+            "index": 19,
+            "counter": 2,
+            "key": "2008",
+            "key_binary_compact": "0010000000001000",
+            "key_binary_spaced": "0010 0000 0000 1000"
+        }
+    ]
+}

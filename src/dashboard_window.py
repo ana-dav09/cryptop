@@ -3,12 +3,12 @@ from PyQt6 import QtWidgets, QtGui, QtCore
 from barra_lateral import SidebarWidget
 
 class DashboardWindow(QtWidgets.QWidget):
-    new_analysis_requested = QtCore.pyqtSignal()
-    project_selection_requested = QtCore.pyqtSignal()
-    history_requested = QtCore.pyqtSignal()
-    settings_requested = QtCore.pyqtSignal()
-    logout_requested = QtCore.pyqtSignal()
-    information_requested = QtCore.pyqtSignal()
+    new_analysis_requested2 = QtCore.pyqtSignal()
+    project_selection_requested2 = QtCore.pyqtSignal()
+    history_requested2 = QtCore.pyqtSignal()
+    settings_requested2 = QtCore.pyqtSignal()
+    logout_requested2 = QtCore.pyqtSignal()
+    information_requested2 = QtCore.pyqtSignal()
 
     def __init__(self):
         super().__init__()
@@ -22,9 +22,18 @@ class DashboardWindow(QtWidgets.QWidget):
         main_layout.setContentsMargins(0,0,0,0)
         main_layout.setSpacing(0)
 
-        # --- Sidebar ---
         self.sidebar = SidebarWidget(self)
+        
         main_layout.addWidget(self.sidebar)
+
+        # CONECTAR las señales del sidebar a las señales del dashboard
+        
+        self.sidebar.project_selection_requested.connect(self.project_selection_requested2.emit)
+        self.sidebar.history_requested.connect(self.history_requested2.emit)
+        self.sidebar.information_requested.connect(self.information_requested2.emit)
+        self.sidebar.logout_requested.connect(self.logout_requested2.emit)
+        self.sidebar.new_analysis_requested.connect(self.new_analysis_requested2.emit)
+        
 
         # --- Contenido Principal ---
         content_area = QtWidgets.QFrame(self)
@@ -96,10 +105,10 @@ class DashboardWindow(QtWidgets.QWidget):
         left_col.addWidget(quick_label)
 
         quick_actions = [
-            ("Nuevo Análisis", self.new_analysis_requested.emit, "#219EBC"),
-            ("Tus Proyectos", self.project_selection_requested.emit, "#1F7A8C"),
-            ("Historial", self.history_requested.emit, "#264653"),
-            ("Configuración", self.settings_requested.emit, "#6A0572")
+            ("Nuevo Análisis", self.new_analysis_requested2.emit, "#219EBC"),
+            ("Tus Proyectos", self.project_selection_requested2.emit, "#1F7A8C"),
+            ("Historial", self.history_requested2.emit, "#264653"),
+            ("Configuración", self.settings_requested2.emit, "#6A0572")
         ]
         for text, callback, color in quick_actions:
             btn = QtWidgets.QPushButton(text)

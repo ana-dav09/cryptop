@@ -1,20 +1,42 @@
 import sys
 import json, os
-from firebase_serv import register_user, get_user
+# from firebase_serv import register_user, get_user  # Comentado para usar almacenamiento local
 from PyQt6 import QtWidgets, QtGui, QtCore
 
 USER_DB = "users.json"
 
 
 def load_users():
+    """Carga usuarios desde el archivo JSON"""
     if os.path.exists(USER_DB):
         with open(USER_DB, "r") as file:
             return json.load(file)
     return {}
 
+
 def save_users(users):
+    """Guarda usuarios en el archivo JSON"""
     with open(USER_DB, "w") as file:
         json.dump(users, file, indent=4)
+
+
+def get_user_local(email):
+    """Obtiene un usuario del almacenamiento local"""
+    users = load_users()
+    return users.get(email, None)
+
+
+def register_user_local(email, password, names, lastnames, dob):
+    """Registra un nuevo usuario en el almacenamiento local"""
+    users = load_users()
+    users[email] = {
+        "password": password,
+        "names": names,
+        "lastnames": lastnames,
+        "dob": dob
+    }
+    save_users(users)
+    return True
 
 
 class RegistroWindow(QtWidgets.QWidget):
@@ -180,12 +202,13 @@ class RegistroWindow(QtWidgets.QWidget):
         return line_edit
 
     def register_account(self):
-        email = self.email_input.text()
-        names = self.names_input.text()
-        lastnames = self.lastnames_input.text()
-        password = self.password_input.text()
-        confirm_password = self.confirm_password_input.text()
-        dob = self.dob_input.text()
+        """Registra una cuenta usando almacenamiento local"""
+        email = self.email_input.text().strip()
+        names = self.names_input.text().strip()
+        lastnames = self.lastnames_input.text().strip()
+        password = self.password_input.text().strip()
+        confirm_password = self.confirm_password_input.text().strip()
+        dob = self.dob_input.text().strip()
 
         if not email or not password or not names or not lastnames or not confirm_password:
             QtWidgets.QMessageBox.warning(self, "Error de Registro", "Por favor, complete todos los campos.")
@@ -195,13 +218,23 @@ class RegistroWindow(QtWidgets.QWidget):
             QtWidgets.QMessageBox.warning(self, "Error de Contraseña", "Las contraseñas no coinciden.")
             return
 
-        if get_user(email):
+        # --- ALMACENAMIENTO LOCAL ---
+        if get_user_local(email):
             QtWidgets.QMessageBox.warning(self, "Error", "Este correo ya está registrado.")
             return
 
-        register_user(email, password, names, lastnames, dob)
+        register_user_local(email, password, names, lastnames, dob)
         QtWidgets.QMessageBox.information(self, "Éxito", "Registro exitoso. ¡Ahora puedes iniciar sesión!")
         self.go_to_login.emit()
+
+        # --- FIREBASE (COMENTADO) ---
+        # if get_user(email):
+        #     QtWidgets.QMessageBox.warning(self, "Error", "Este correo ya está registrado.")
+        #     return
+        #
+        # register_user(email, password, names, lastnames, dob)
+        # QtWidgets.QMessageBox.information(self, "Éxito", "Registro exitoso. ¡Ahora puedes iniciar sesión!")
+        # self.go_to_login.emit()
 
 
 if __name__ == "__main__":

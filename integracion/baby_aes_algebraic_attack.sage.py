@@ -48,6 +48,7 @@ fixed_variables = [{
 sat.build_cipher_model(fixed_variables)
 solution = sat.solve('cipher', solver_name="cryptominisat")
 
+
 #res = {"solver": "cryptominisat", "plaintext": f'0x{plaintext:04x}', "ciphertext": f'0x{ciphertext:04x}', "key": solution['components_values']['key']['value'], "time": solution['solving_time_seconds']}
 #print(json.dumps(res))
 

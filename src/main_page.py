@@ -9,6 +9,8 @@ from login_window import LoginWindow
 from dashboard_window import DashboardWindow
 from information_window import InformationWindow
 from project_selection_window import ProjectSelectionWindow
+from barra_lateral import SidebarWidget
+from new_project_window import NewAnalysisWindow
 
 class RecuperarPasswordWindow(QtWidgets.QWidget):
     def __init__(self):
@@ -16,13 +18,6 @@ class RecuperarPasswordWindow(QtWidgets.QWidget):
         self.setWindowTitle("Recuperar Contraseña")
         layout = QtWidgets.QVBoxLayout(self)
         layout.addWidget(QtWidgets.QLabel("Pantalla de Recuperar Contraseña"))
-
-class NuevoAnalisisWindow(QtWidgets.QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Nuevo Análisis")
-        layout = QtWidgets.QVBoxLayout(self)
-        layout.addWidget(QtWidgets.QLabel("Pantalla de Nuevo Análisis (aquí se configuran los tipos de análisis)"))
 
 class LoadProjectWindow(QtWidgets.QWidget): #"Cargar Proyecto"
     def __init__(self):
@@ -60,9 +55,9 @@ class MainApplicationWindow(QtWidgets.QMainWindow):
         self.inicio_screen = InicioWindow()
         self.register_screen = RegistroWindow()
         self.login_screen = LoginWindow()
-        self.dashboard_screen = DashboardWindow() # Instancia del Dashboard
+        self.dashboard_screen = DashboardWindow()
         self.recover_password_screen = RecuperarPasswordWindow()
-        self.new_analysis_screen = NuevoAnalisisWindow()
+        self.new_analysis_screen = NewAnalysisWindow()
         self.load_project_screen = LoadProjectWindow()
         self.history_screen = HistoryWindow()
         self.project_selection_screen = ProjectSelectionWindow()
@@ -79,31 +74,39 @@ class MainApplicationWindow(QtWidgets.QMainWindow):
         self.login_screen.go_to_inicio.connect(self.show_inicio_screen)
         self.login_screen.go_to_register.connect(self.show_register_screen)
         self.login_screen.go_to_dashboard.connect(self.show_dashboard_screen)
-        #self.login_screen.go_to_recover_password.connect(self.show_recover_password_screen)
 
-        # CONECTAR LAS SEÑALES DIRECTAMENTE DEL SIDEBAR DEL DASHBOARD
-        #self.dashboard_screen.sidebar.new_analysis_requested.connect(self.show_new_analysis_screen)
-        self.dashboard_screen.sidebar.project_selection_requested.connect(self.show_project_selection_screen)
-        self.dashboard_screen.sidebar.history_requested.connect(self.show_history_screen)
-        #self.dashboard_screen.sidebar.settings_requested.connect(self.show_settings_screen)
-        self.dashboard_screen.sidebar.information_requested.connect(self.show_information_screen)
-        self.dashboard_screen.sidebar.logout_requested.connect(self.show_inicio_screen) # Cerrar sesión
+        # CONECTAR SEÑALES DEL DASHBOARD AL MAINAPP
+        self.dashboard_screen.project_selection_requested2.connect(self.show_project_selection_screen)
+        self.dashboard_screen.history_requested2.connect(self.show_history_screen)
+        self.dashboard_screen.information_requested2.connect(self.show_information_screen)
+        self.dashboard_screen.logout_requested2.connect(self.show_inicio_screen)
+        self.dashboard_screen.new_analysis_requested2.connect(self.show_new_analysis_screen)
 
-        # CONECTAR LAS SEÑALES DE LA PANTALLA DE SELECCIÓN DE PROYECTO
-        self.project_selection_screen.select_project_requested.connect(self._handle_project_selected)
-        self.project_selection_screen.go_to_history_screen.connect(self.show_history_screen)
+        #CONECTAR LAS SEÑALES DE LA PANTALLA DE NUEVO ANÁLISIS
+        self.new_analysis_screen.project_selection_requested2.connect(self.show_project_selection_screen)
+        self.dashboard_screen.history_requested2.connect(self.show_history_screen)
+        self.dashboard_screen.information_requested2.connect(self.show_information_screen)
+        self.dashboard_screen.logout_requested2.connect(self.show_inicio_screen)
+        
+         # CONECTAR LAS SEÑALES DE LA PANTALLA DE SELECCIÓN DE PROYECTO
+        self.project_selection_screen.project_selection_requested2.connect(self.show_project_selection_screen)
+        self.project_selection_screen.history_requested2.connect(self.show_history_screen)
+        self.project_selection_screen.information_requested2.connect(self.show_information_screen)
+        self.project_selection_screen.logout_requested2.connect(self.show_inicio_screen)
+        self.project_selection_screen.new_analysis_requested2.connect(self.show_new_analysis_screen)
+        self.project_selection_screen.dashboard_screen.connect(self.show_dashboard_screen)
 
         # Añadir las pantallas al QStackedWidget
-        self.stacked_widget.addWidget(self.inicio_screen)      # Index 0
-        self.stacked_widget.addWidget(self.register_screen)    # Index 1
-        self.stacked_widget.addWidget(self.login_screen)       # Index 2
+        self.stacked_widget.addWidget(self.inicio_screen)
+        self.stacked_widget.addWidget(self.register_screen)
+        self.stacked_widget.addWidget(self.login_screen)
         self.stacked_widget.addWidget(self.dashboard_screen)
         self.stacked_widget.addWidget(self.information_screen)
         self.stacked_widget.addWidget(self.history_screen)
         self.stacked_widget.addWidget(self.project_selection_screen)
+        self.stacked_widget.addWidget(self.new_analysis_screen)
 
-
-        self.show_inicio_screen() # Mostrar la pantalla de inicio al arrancar
+        self.show_inicio_screen()
 
     def show_inicio_screen(self):
         self.stacked_widget.setCurrentWidget(self.inicio_screen)
@@ -126,6 +129,9 @@ class MainApplicationWindow(QtWidgets.QMainWindow):
     def show_project_selection_screen(self):
         self.stacked_widget.setCurrentWidget(self.project_selection_screen)
 
+    def show_new_analysis_screen(self):
+        self.stacked_widget.setCurrentWidget(self.new_analysis_screen)
+
     
 
     # Método para manejar el proyecto seleccionado
@@ -142,7 +148,13 @@ if __name__ == "__main__":
     app = QtWidgets.QApplication(sys.argv)
     main_app = MainApplicationWindow()
     main_app.show()
-    with open("style.qss", "r") as file:
+    
+    # Si style.qss está en la misma carpeta que main_page.py:
+    try:
+        with open("style.qss", "r") as file:
             style = file.read()
             app.setStyleSheet(style)
+    except FileNotFoundError:
+        print("⚠️ Archivo style.qss no encontrado, usando estilos por defecto")
+    
     sys.exit(app.exec())

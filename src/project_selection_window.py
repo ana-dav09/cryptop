@@ -5,7 +5,13 @@ from barra_lateral import SidebarWidget
 
 class ProjectSelectionWindow(QtWidgets.QWidget):
     select_project_requested = QtCore.pyqtSignal(dict)
-    go_to_history_screen = QtCore.pyqtSignal()
+    new_analysis_requested2 = QtCore.pyqtSignal()
+    project_selection_requested2 = QtCore.pyqtSignal()
+    history_requested2 = QtCore.pyqtSignal()
+    settings_requested2 = QtCore.pyqtSignal()
+    logout_requested2 = QtCore.pyqtSignal()
+    information_requested2 = QtCore.pyqtSignal()
+    dashboard_screen = QtCore.pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -25,6 +31,14 @@ class ProjectSelectionWindow(QtWidgets.QWidget):
          # --- Sidebar ---
         self.sidebar = SidebarWidget(self)
         main_layout.addWidget(self.sidebar)
+
+         # CONECTAR las señales del sidebar a las señales del dashboard
+        
+        self.sidebar.project_selection_requested.connect(self.project_selection_requested2.emit)
+        self.sidebar.history_requested.connect(self.history_requested2.emit)
+        self.sidebar.information_requested.connect(self.information_requested2.emit)
+        self.sidebar.logout_requested.connect(self.logout_requested2.emit)
+        self.sidebar.new_analysis_requested.connect(self.new_analysis_requested2.emit)
 
         # --- Contenedor central ---
         central_widget = QtWidgets.QWidget()
@@ -132,7 +146,7 @@ class ProjectSelectionWindow(QtWidgets.QWidget):
                 background-color: #333333;
             }
         """)
-        self.btn_regresar.clicked.connect(self.go_to_history_screen.emit)
+        self.btn_regresar.clicked.connect(self.dashboard_screen.emit)
         buttons_layout.addWidget(self.btn_regresar)
 
         central_layout.addLayout(buttons_layout)

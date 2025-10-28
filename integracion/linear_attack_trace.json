@@ -1,0 +1,854 @@
+{
+  "attack_type": "Linear Cryptanalysis",
+  "algorithm": "Baby AES",
+  "phases": [
+    {
+      "phase": "Fase 1: Preparaci\u00f3n y An\u00e1lisis de la S-Box",
+      "description": "Se calcula la Tabla de Aproximaci\u00f3n Lineal (LAT) de la S-Box para identificar aproximaciones lineales con sesgo estad\u00edstico explotable.",
+      "steps": [
+        {
+          "step": "C\u00e1lculo de la S-Box",
+          "sbox_values": [
+            6,
+            11,
+            5,
+            4,
+            2,
+            14,
+            7,
+            10,
+            9,
+            13,
+            15,
+            12,
+            3,
+            1,
+            0,
+            8
+          ],
+          "sbox_hex": [
+            "0x6",
+            "0xB",
+            "0x5",
+            "0x4",
+            "0x2",
+            "0xE",
+            "0x7",
+            "0xA",
+            "0x9",
+            "0xD",
+            "0xF",
+            "0xC",
+            "0x3",
+            "0x1",
+            "0x0",
+            "0x8"
+          ],
+          "description": "La S-Box es la \u00fanica componente no-lineal del cifrado"
+        },
+        {
+          "step": "C\u00e1lculo de la Tabla de Aproximaci\u00f3n Lineal (LAT)",
+          "description": "La LAT muestra las correlaciones entre bits de entrada y salida de la S-Box. Un valor LAT[a][b] cercano a \u00b18 indica una aproximaci\u00f3n lineal fuerte.",
+          "lat_dimension": "16x16",
+          "total_entries": 256,
+          "note": "Los valores de correlaci\u00f3n se calculan como: corr = (agreements - disagreements) / 16"
+        }
+      ]
+    },
+    {
+      "phase": "Fase 2: Construcci\u00f3n del Trail Lineal",
+      "description": "Se construye un camino (trail) lineal que conecta bits del texto plano con bits antes de la \u00faltima ronda. En cada ronda se selecciona la m\u00e1scara de salida que maximiza el sesgo estad\u00edstico usando la LAT.",
+      "steps": [
+        {
+          "step": "Inicializaci\u00f3n",
+          "description": "M\u00e1scara de entrada seleccionada manualmente para activar nibbles espec\u00edficos",
+          "input_mask": "0010, 0000, 0000, 1000",
+          "active_nibbles": 2,
+          "note": "Esta m\u00e1scara determina qu\u00e9 bits del texto plano participan en la aproximaci\u00f3n"
+        },
+        {
+          "round": 1,
+          "description": "Ronda 1: Propagaci\u00f3n a trav\u00e9s de SubBytes, ShiftRows y MixColumns",
+          "substeps": [
+            {
+              "operation": "SubBytes (via LAT)",
+              "input_mask": "0010, 0000, 0000, 1000",
+              "output_mask": "0101, 0000, 0000, 1100",
+              "mask_selections": [
+                {
+                  "nibble_position": 0,
+                  "input_mask": "0x2",
+                  "output_mask": "0x5",
+                  "probability": 0.25,
+                  "bias": 0.25,
+                  "reason": "Seleccionada por m\u00e1ximo sesgo (0.2500)"
+                },
+                {
+                  "nibble_position": 1,
+                  "input_mask": "0x0",
+                  "output_mask": "0x0",
+                  "reason": "Nibble inactivo (m\u00e1scara de entrada = 0)"
+                },
+                {
+                  "nibble_position": 2,
+                  "input_mask": "0x0",
+                  "output_mask": "0x0",
+                  "reason": "Nibble inactivo (m\u00e1scara de entrada = 0)"
+                },
+                {
+                  "nibble_position": 3,
+                  "input_mask": "0x8",
+                  "output_mask": "0xC",
+                  "probability": 0.25,
+                  "bias": 0.25,
+                  "reason": "Seleccionada por m\u00e1ximo sesgo (0.2500)"
+                }
+              ],
+              "correlation_details": [
+                {
+                  "nibble": 0,
+                  "input": "0010 (0x2)",
+                  "output": "0101 (0x5)",
+                  "correlation": -0.5
+                },
+                {
+                  "nibble": 1,
+                  "input": "0000",
+                  "output": "0000",
+                  "correlation": 1.0,
+                  "note": "Nibble inactivo"
+                },
+                {
+                  "nibble": 2,
+                  "input": "0000",
+                  "output": "0000",
+                  "correlation": 1.0,
+                  "note": "Nibble inactivo"
+                },
+                {
+                  "nibble": 3,
+                  "input": "1000 (0x8)",
+                  "output": "1100 (0xC)",
+                  "correlation": -0.5
+                }
+              ],
+              "round_correlation": 0.25
+            },
+            {
+              "operation": "ShiftRows + InvMixColumns",
+              "input_to_perm": "0101, 0000, 0000, 1100",
+              "output_after_perm": "1001, 0000, 0000, 0000",
+              "note": "La m\u00e1scara se propaga linealmente a trav\u00e9s de las transformaciones lineales"
+            }
+          ],
+          "accumulated_correlation": 0.25,
+          "accumulated_bias": 0.25
+        },
+        {
+          "round": 2,
+          "description": "Ronda 2: Propagaci\u00f3n a trav\u00e9s de SubBytes, ShiftRows y MixColumns",
+          "substeps": [
+            {
+              "operation": "SubBytes (via LAT)",
+              "input_mask": "1001, 0000, 0000, 0000",
+              "output_mask": "1011, 0000, 0000, 0000",
+              "mask_selections": [
+                {
+                  "nibble_position": 0,
+                  "input_mask": "0x9",
+                  "output_mask": "0xB",
+                  "probability": 0.25,
+                  "bias": 0.25,
+                  "reason": "Seleccionada por m\u00e1ximo sesgo (0.2500)"
+                },
+                {
+                  "nibble_position": 1,
+                  "input_mask": "0x0",
+                  "output_mask": "0x0",
+                  "reason": "Nibble inactivo (m\u00e1scara de entrada = 0)"
+                },
+                {
+                  "nibble_position": 2,
+                  "input_mask": "0x0",
+                  "output_mask": "0x0",
+                  "reason": "Nibble inactivo (m\u00e1scara de entrada = 0)"
+                },
+                {
+                  "nibble_position": 3,
+                  "input_mask": "0x0",
+                  "output_mask": "0x0",
+                  "reason": "Nibble inactivo (m\u00e1scara de entrada = 0)"
+                }
+              ],
+              "correlation_details": [
+                {
+                  "nibble": 0,
+                  "input": "1001 (0x9)",
+                  "output": "1011 (0xB)",
+                  "correlation": -0.5
+                },
+                {
+                  "nibble": 1,
+                  "input": "0000",
+                  "output": "0000",
+                  "correlation": 1.0,
+                  "note": "Nibble inactivo"
+                },
+                {
+                  "nibble": 2,
+                  "input": "0000",
+                  "output": "0000",
+                  "correlation": 1.0,
+                  "note": "Nibble inactivo"
+                },
+                {
+                  "nibble": 3,
+                  "input": "0000",
+                  "output": "0000",
+                  "correlation": 1.0,
+                  "note": "Nibble inactivo"
+                }
+              ],
+              "round_correlation": -0.5
+            },
+            {
+              "operation": "ShiftRows + InvMixColumns",
+              "input_to_perm": "1011, 0000, 0000, 0000",
+              "output_after_perm": "1110, 0101, 0000, 0000",
+              "note": "La m\u00e1scara se propaga linealmente a trav\u00e9s de las transformaciones lineales"
+            }
+          ],
+          "accumulated_correlation": -0.125,
+          "accumulated_bias": 0.125
+        },
+        {
+          "step": "M\u00e1scara Final",
+          "description": "M\u00e1scara de entrada a la \u00faltima ronda (despu\u00e9s de todas las propagaciones)",
+          "final_mask": "1110, 0101, 0000, 0000",
+          "total_correlation": -0.125,
+          "total_bias": 0.125,
+          "interpretation": "Esta m\u00e1scara tiene un sesgo de 0.125000, lo que significa que la aproximaci\u00f3n lineal se cumple con probabilidad 0.5625"
+        }
+      ]
+    },
+    {
+      "phase": "Fase 3: Generaci\u00f3n de Candidatos de Subclave",
+      "description": "Se generan todas las posibles subclaves parciales basadas en los nibbles activos de la m\u00e1scara final.",
+      "steps": [
+        {
+          "step": "Generaci\u00f3n de Subclaves Candidatas",
+          "description": "Se generan todas las posibles subclaves parciales para los nibbles activos",
+          "total_candidates": 256,
+          "active_nibble_positions": [
+            0,
+            3
+          ],
+          "inactive_nibble_positions": [
+            1,
+            2
+          ],
+          "search_space": "2^8 = 256 candidatos",
+          "note": "Solo se var\u00edan los nibbles que la m\u00e1scara final identifica como relevantes. Los nibbles inactivos se fijan en 0000."
+        }
+      ]
+    },
+    {
+      "phase": "Fase 4: An\u00e1lisis Estad\u00edstico de Pares",
+      "description": "Se analizan 1024 pares texto-plano/cifrado. Para cada par y cada candidato se verifica si la aproximaci\u00f3n lineal se cumple. El candidato correcto mostrar\u00e1 un sesgo estad\u00edstico significativo.",
+      "steps": [
+        {
+          "step": "An\u00e1lisis Detallado de Pares (Muestra)",
+          "description": "Para cada par texto-plano/cifrado se verifica la aproximaci\u00f3n lineal. Se muestran los primeros 10 pares con 3 candidatos cada uno.",
+          "total_pairs": 1024,
+          "pairs_analyzed": [
+            {
+              "pair_index": 0,
+              "plaintext": "33A2",
+              "ciphertext": "53AA",
+              "plaintext_bits": "0011, 0011, 1010, 0010",
+              "key_tests": [
+                {
+                  "key_candidate": "0000, 0000, 0000, 0000",
+                  "key_hex": "0000",
+                  "state_after_addroundkey": "0101, 0011, 1010, 1010",
+                  "state_after_shiftrows": "0101, 1010, 1010, 0011",
+                  "state_after_inv_sbox": "0010, 0111, 0111, 1100",
+                  "lhs_value": 1,
+                  "rhs_value": 1,
+                  "match": true,
+                  "counter_delta": "+1"
+                },
+                {
+                  "key_candidate": "0001, 0000, 0000, 0000",
+                  "key_hex": "1000",
+                  "state_after_addroundkey": "0100, 0011, 1010, 1010",
+                  "state_after_shiftrows": "0100, 1010, 1010, 0011",
+                  "state_after_inv_sbox": "0011, 0111, 0111, 1100",
+                  "lhs_value": 1,
+                  "rhs_value": 1,
+                  "match": true,
+                  "counter_delta": "+1"
+                },
+                {
+                  "key_candidate": "0010, 0000, 0000, 0000",
+                  "key_hex": "2000",
+                  "state_after_addroundkey": "0111, 0011, 1010, 1010",
+                  "state_after_shiftrows": "0111, 1010, 1010, 0011",
+                  "state_after_inv_sbox": "0110, 0111, 0111, 1100",
+                  "lhs_value": 1,
+                  "rhs_value": 0,
+                  "match": false,
+                  "counter_delta": "-1"
+                }
+              ]
+            },
+            {
+              "pair_index": 1,
+              "plaintext": "C413",
+              "ciphertext": "A41B",
+              "plaintext_bits": "1100, 0100, 0001, 0011",
+              "key_tests": [
+                {
+                  "key_candidate": "0000, 0000, 0000, 0000",
+                  "key_hex": "0000",
+                  "state_after_addroundkey": "1010, 0100, 0001, 1011",
+                  "state_after_shiftrows": "1010, 1011, 0001, 0100",
+                  "state_after_inv_sbox": "0111, 0001, 1101, 0011",
+                  "lhs_value": 0,
+                  "rhs_value": 1,
+                  "match": false,
+                  "counter_delta": "-1"
+                },
+                {
+                  "key_candidate": "0001, 0000, 0000, 0000",
+                  "key_hex": "1000",
+                  "state_after_addroundkey": "1011, 0100, 0001, 1011",
+                  "state_after_shiftrows": "1011, 1011, 0001, 0100",
+                  "state_after_inv_sbox": "0001, 0001, 1101, 0011",
+                  "lhs_value": 0,
+                  "rhs_value": 1,
+                  "match": false,
+                  "counter_delta": "-1"
+                },
+                {
+                  "key_candidate": "0010, 0000, 0000, 0000",
+                  "key_hex": "2000",
+                  "state_after_addroundkey": "1000, 0100, 0001, 1011",
+                  "state_after_shiftrows": "1000, 1011, 0001, 0100",
+                  "state_after_inv_sbox": "1111, 0001, 1101, 0011",
+                  "lhs_value": 0,
+                  "rhs_value": 0,
+                  "match": true,
+                  "counter_delta": "+1"
+                }
+              ]
+            },
+            {
+              "pair_index": 2,
+              "plaintext": "0E56",
+              "ciphertext": "6E5E",
+              "plaintext_bits": "0000, 1110, 0101, 0110",
+              "key_tests": [
+                {
+                  "key_candidate": "0000, 0000, 0000, 0000",
+                  "key_hex": "0000",
+                  "state_after_addroundkey": "0110, 1110, 0101, 1110",
+                  "state_after_shiftrows": "0110, 1110, 0101, 1110",
+                  "state_after_inv_sbox": "0000, 0101, 0010, 0101",
+                  "lhs_value": 0,
+                  "rhs_value": 0,
+                  "match": true,
+                  "counter_delta": "+1"
+                },
+                {
+                  "key_candidate": "0001, 0000, 0000, 0000",
+                  "key_hex": "1000",
+                  "state_after_addroundkey": "0111, 1110, 0101, 1110",
+                  "state_after_shiftrows": "0111, 1110, 0101, 1110",
+                  "state_after_inv_sbox": "0110, 0101, 0010, 0101",
+                  "lhs_value": 0,
+                  "rhs_value": 0,
+                  "match": true,
+                  "counter_delta": "+1"
+                },
+                {
+                  "key_candidate": "0010, 0000, 0000, 0000",
+                  "key_hex": "2000",
+                  "state_after_addroundkey": "0100, 1110, 0101, 1110",
+                  "state_after_shiftrows": "0100, 1110, 0101, 1110",
+                  "state_after_inv_sbox": "0011, 0101, 0010, 0101",
+                  "lhs_value": 0,
+                  "rhs_value": 1,
+                  "match": false,
+                  "counter_delta": "-1"
+                }
+              ]
+            },
+            {
+              "pair_index": 3,
+              "plaintext": "8518",
+              "ciphertext": "E510",
+              "plaintext_bits": "1000, 0101, 0001, 1000",
+              "key_tests": [
+                {
+                  "key_candidate": "0000, 0000, 0000, 0000",
+                  "key_hex": "0000",
+                  "state_after_addroundkey": "1110, 0101, 0001, 0000",
+                  "state_after_shiftrows": "1110, 0000, 0001, 0101",
+                  "state_after_inv_sbox": "0101, 1110, 1101, 0010",
+                  "lhs_value": 1,
+                  "rhs_value": 0,
+                  "match": false,
+                  "counter_delta": "-1"
+                },
+                {
+                  "key_candidate": "0001, 0000, 0000, 0000",
+                  "key_hex": "1000",
+                  "state_after_addroundkey": "1111, 0101, 0001, 0000",
+                  "state_after_shiftrows": "1111, 0000, 0001, 0101",
+                  "state_after_inv_sbox": "1010, 1110, 1101, 0010",
+                  "lhs_value": 1,
+                  "rhs_value": 1,
+                  "match": true,
+                  "counter_delta": "+1"
+                },
+                {
+                  "key_candidate": "0010, 0000, 0000, 0000",
+                  "key_hex": "2000",
+                  "state_after_addroundkey": "1100, 0101, 0001, 0000",
+                  "state_after_shiftrows": "1100, 0000, 0001, 0101",
+                  "state_after_inv_sbox": "1011, 1110, 1101, 0010",
+                  "lhs_value": 1,
+                  "rhs_value": 1,
+                  "match": true,
+                  "counter_delta": "+1"
+                }
+              ]
+            },
+            {
+              "pair_index": 4,
+              "plaintext": "5268",
+              "ciphertext": "3260",
+              "plaintext_bits": "0101, 0010, 0110, 1000",
+              "key_tests": [
+                {
+                  "key_candidate": "0000, 0000, 0000, 0000",
+                  "key_hex": "0000",
+                  "state_after_addroundkey": "0011, 0010, 0110, 0000",
+                  "state_after_shiftrows": "0011, 0000, 0110, 0010",
+                  "state_after_inv_sbox": "1100, 1110, 0000, 0100",
+                  "lhs_value": 1,
+                  "rhs_value": 1,
+                  "match": true,
+                  "counter_delta": "+1"
+                },
+                {
+                  "key_candidate": "0001, 0000, 0000, 0000",
+                  "key_hex": "1000",
+                  "state_after_addroundkey": "0010, 0010, 0110, 0000",
+                  "state_after_shiftrows": "0010, 0000, 0110, 0010",
+                  "state_after_inv_sbox": "0100, 1110, 0000, 0100",
+                  "lhs_value": 1,
+                  "rhs_value": 0,
+                  "match": false,
+                  "counter_delta": "-1"
+                },
+                {
+                  "key_candidate": "0010, 0000, 0000, 0000",
+                  "key_hex": "2000",
+                  "state_after_addroundkey": "0001, 0010, 0110, 0000",
+                  "state_after_shiftrows": "0001, 0000, 0110, 0010",
+                  "state_after_inv_sbox": "1101, 1110, 0000, 0100",
+                  "lhs_value": 1,
+                  "rhs_value": 1,
+                  "match": true,
+                  "counter_delta": "+1"
+                }
+              ]
+            },
+            {
+              "pair_index": 5,
+              "plaintext": "C881",
+              "ciphertext": "A889",
+              "plaintext_bits": "1100, 1000, 1000, 0001",
+              "key_tests": [
+                {
+                  "key_candidate": "0000, 0000, 0000, 0000",
+                  "key_hex": "0000",
+                  "state_after_addroundkey": "1010, 1000, 1000, 1001",
+                  "state_after_shiftrows": "1010, 1001, 1000, 1000",
+                  "state_after_inv_sbox": "0111, 1000, 1111, 1111",
+                  "lhs_value": 0,
+                  "rhs_value": 0,
+                  "match": true,
+                  "counter_delta": "+1"
+                },
+                {
+                  "key_candidate": "0001, 0000, 0000, 0000",
+                  "key_hex": "1000",
+                  "state_after_addroundkey": "1011, 1000, 1000, 1001",
+                  "state_after_shiftrows": "1011, 1001, 1000, 1000",
+                  "state_after_inv_sbox": "0001, 1000, 1111, 1111",
+                  "lhs_value": 0,
+                  "rhs_value": 0,
+                  "match": true,
+                  "counter_delta": "+1"
+                },
+                {
+                  "key_candidate": "0010, 0000, 0000, 0000",
+                  "key_hex": "2000",
+                  "state_after_addroundkey": "1000, 1000, 1000, 1001",
+                  "state_after_shiftrows": "1000, 1001, 1000, 1000",
+                  "state_after_inv_sbox": "1111, 1000, 1111, 1111",
+                  "lhs_value": 0,
+                  "rhs_value": 1,
+                  "match": false,
+                  "counter_delta": "-1"
+                }
+              ]
+            },
+            {
+              "pair_index": 6,
+              "plaintext": "CADB",
+              "ciphertext": "AAD3",
+              "plaintext_bits": "1100, 1010, 1101, 1011",
+              "key_tests": [
+                {
+                  "key_candidate": "0000, 0000, 0000, 0000",
+                  "key_hex": "0000",
+                  "state_after_addroundkey": "1010, 1010, 1101, 0011",
+                  "state_after_shiftrows": "1010, 0011, 1101, 1010",
+                  "state_after_inv_sbox": "0111, 1100, 1001, 0111",
+                  "lhs_value": 1,
+                  "rhs_value": 1,
+                  "match": true,
+                  "counter_delta": "+1"
+                },
+                {
+                  "key_candidate": "0001, 0000, 0000, 0000",
+                  "key_hex": "1000",
+                  "state_after_addroundkey": "1011, 1010, 1101, 0011",
+                  "state_after_shiftrows": "1011, 0011, 1101, 1010",
+                  "state_after_inv_sbox": "0001, 1100, 1001, 0111",
+                  "lhs_value": 1,
+                  "rhs_value": 1,
+                  "match": true,
+                  "counter_delta": "+1"
+                },
+                {
+                  "key_candidate": "0010, 0000, 0000, 0000",
+                  "key_hex": "2000",
+                  "state_after_addroundkey": "1000, 1010, 1101, 0011",
+                  "state_after_shiftrows": "1000, 0011, 1101, 1010",
+                  "state_after_inv_sbox": "1111, 1100, 1001, 0111",
+                  "lhs_value": 1,
+                  "rhs_value": 0,
+                  "match": false,
+                  "counter_delta": "-1"
+                }
+              ]
+            },
+            {
+              "pair_index": 7,
+              "plaintext": "3C57",
+              "ciphertext": "5C5F",
+              "plaintext_bits": "0011, 1100, 0101, 0111",
+              "key_tests": [
+                {
+                  "key_candidate": "0000, 0000, 0000, 0000",
+                  "key_hex": "0000",
+                  "state_after_addroundkey": "0101, 1100, 0101, 1111",
+                  "state_after_shiftrows": "0101, 1111, 0101, 1100",
+                  "state_after_inv_sbox": "0010, 1010, 0010, 1011",
+                  "lhs_value": 1,
+                  "rhs_value": 1,
+                  "match": true,
+                  "counter_delta": "+1"
+                },
+                {
+                  "key_candidate": "0001, 0000, 0000, 0000",
+                  "key_hex": "1000",
+                  "state_after_addroundkey": "0100, 1100, 0101, 1111",
+                  "state_after_shiftrows": "0100, 1111, 0101, 1100",
+                  "state_after_inv_sbox": "0011, 1010, 0010, 1011",
+                  "lhs_value": 1,
+                  "rhs_value": 1,
+                  "match": true,
+                  "counter_delta": "+1"
+                },
+                {
+                  "key_candidate": "0010, 0000, 0000, 0000",
+                  "key_hex": "2000",
+                  "state_after_addroundkey": "0111, 1100, 0101, 1111",
+                  "state_after_shiftrows": "0111, 1111, 0101, 1100",
+                  "state_after_inv_sbox": "0110, 1010, 0010, 1011",
+                  "lhs_value": 1,
+                  "rhs_value": 0,
+                  "match": false,
+                  "counter_delta": "-1"
+                }
+              ]
+            },
+            {
+              "pair_index": 8,
+              "plaintext": "E17F",
+              "ciphertext": "8177",
+              "plaintext_bits": "1110, 0001, 0111, 1111",
+              "key_tests": [
+                {
+                  "key_candidate": "0000, 0000, 0000, 0000",
+                  "key_hex": "0000",
+                  "state_after_addroundkey": "1000, 0001, 0111, 0111",
+                  "state_after_shiftrows": "1000, 0111, 0111, 0001",
+                  "state_after_inv_sbox": "1111, 0110, 0110, 1101",
+                  "lhs_value": 0,
+                  "rhs_value": 0,
+                  "match": true,
+                  "counter_delta": "+1"
+                },
+                {
+                  "key_candidate": "0001, 0000, 0000, 0000",
+                  "key_hex": "1000",
+                  "state_after_addroundkey": "1001, 0001, 0111, 0111",
+                  "state_after_shiftrows": "1001, 0111, 0111, 0001",
+                  "state_after_inv_sbox": "1000, 0110, 0110, 1101",
+                  "lhs_value": 0,
+                  "rhs_value": 0,
+                  "match": true,
+                  "counter_delta": "+1"
+                },
+                {
+                  "key_candidate": "0010, 0000, 0000, 0000",
+                  "key_hex": "2000",
+                  "state_after_addroundkey": "1010, 0001, 0111, 0111",
+                  "state_after_shiftrows": "1010, 0111, 0111, 0001",
+                  "state_after_inv_sbox": "0111, 0110, 0110, 1101",
+                  "lhs_value": 0,
+                  "rhs_value": 1,
+                  "match": false,
+                  "counter_delta": "-1"
+                }
+              ]
+            },
+            {
+              "pair_index": 9,
+              "plaintext": "79BC",
+              "ciphertext": "19B4",
+              "plaintext_bits": "0111, 1001, 1011, 1100",
+              "key_tests": [
+                {
+                  "key_candidate": "0000, 0000, 0000, 0000",
+                  "key_hex": "0000",
+                  "state_after_addroundkey": "0001, 1001, 1011, 0100",
+                  "state_after_shiftrows": "0001, 0100, 1011, 1001",
+                  "state_after_inv_sbox": "1101, 0011, 0001, 1000",
+                  "lhs_value": 0,
+                  "rhs_value": 1,
+                  "match": false,
+                  "counter_delta": "-1"
+                },
+                {
+                  "key_candidate": "0001, 0000, 0000, 0000",
+                  "key_hex": "1000",
+                  "state_after_addroundkey": "0000, 1001, 1011, 0100",
+                  "state_after_shiftrows": "0000, 0100, 1011, 1001",
+                  "state_after_inv_sbox": "1110, 0011, 0001, 1000",
+                  "lhs_value": 0,
+                  "rhs_value": 0,
+                  "match": true,
+                  "counter_delta": "+1"
+                },
+                {
+                  "key_candidate": "0010, 0000, 0000, 0000",
+                  "key_hex": "2000",
+                  "state_after_addroundkey": "0011, 1001, 1011, 0100",
+                  "state_after_shiftrows": "0011, 0100, 1011, 1001",
+                  "state_after_inv_sbox": "1100, 0011, 0001, 1000",
+                  "lhs_value": 0,
+                  "rhs_value": 1,
+                  "match": false,
+                  "counter_delta": "-1"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "step": "Resultados Estad\u00edsticos",
+          "description": "Despu\u00e9s de analizar todos los pares, se ordenan los candidatos por score absoluto",
+          "best_candidate": {
+            "rank": 1,
+            "key_binary": "0111, 0000, 0000, 0000",
+            "key_hex": "7000",
+            "score": -210,
+            "bias": 0.205078125,
+            "probability": 0.6025390625
+          },
+          "top_candidates": [
+            {
+              "rank": 1,
+              "key_binary": "0111, 0000, 0000, 0000",
+              "key_hex": "7000",
+              "score": -210,
+              "abs_score": 210,
+              "estimated_bias": 0.205078125,
+              "estimated_probability": 0.6025390625
+            },
+            {
+              "rank": 2,
+              "key_binary": "0000, 0000, 0000, 0111",
+              "key_hex": "0007",
+              "score": 202,
+              "abs_score": 202,
+              "estimated_bias": 0.197265625,
+              "estimated_probability": 0.5986328125
+            },
+            {
+              "rank": 3,
+              "key_binary": "0101, 0000, 0000, 0000",
+              "key_hex": "5000",
+              "score": 192,
+              "abs_score": 192,
+              "estimated_bias": 0.1875,
+              "estimated_probability": 0.59375
+            },
+            {
+              "rank": 4,
+              "key_binary": "1110, 0000, 0000, 1010",
+              "key_hex": "E00A",
+              "score": 192,
+              "abs_score": 192,
+              "estimated_bias": 0.1875,
+              "estimated_probability": 0.59375
+            },
+            {
+              "rank": 5,
+              "key_binary": "1101, 0000, 0000, 1101",
+              "key_hex": "D00D",
+              "score": -190,
+              "abs_score": 190,
+              "estimated_bias": 0.185546875,
+              "estimated_probability": 0.5927734375
+            },
+            {
+              "rank": 6,
+              "key_binary": "1101, 0000, 0000, 0111",
+              "key_hex": "D007",
+              "score": 188,
+              "abs_score": 188,
+              "estimated_bias": 0.18359375,
+              "estimated_probability": 0.591796875
+            },
+            {
+              "rank": 7,
+              "key_binary": "1010, 0000, 0000, 0000",
+              "key_hex": "A000",
+              "score": -186,
+              "abs_score": 186,
+              "estimated_bias": 0.181640625,
+              "estimated_probability": 0.5908203125
+            },
+            {
+              "rank": 8,
+              "key_binary": "1000, 0000, 0000, 0100",
+              "key_hex": "8004",
+              "score": 186,
+              "abs_score": 186,
+              "estimated_bias": 0.181640625,
+              "estimated_probability": 0.5908203125
+            },
+            {
+              "rank": 9,
+              "key_binary": "0010, 0000, 0000, 1101",
+              "key_hex": "200D",
+              "score": 186,
+              "abs_score": 186,
+              "estimated_bias": 0.181640625,
+              "estimated_probability": 0.5908203125
+            },
+            {
+              "rank": 10,
+              "key_binary": "1000, 0000, 0000, 0000",
+              "key_hex": "8000",
+              "score": 182,
+              "abs_score": 182,
+              "estimated_bias": 0.177734375,
+              "estimated_probability": 0.5888671875
+            },
+            {
+              "rank": 11,
+              "key_binary": "1010, 0000, 0000, 1010",
+              "key_hex": "A00A",
+              "score": 182,
+              "abs_score": 182,
+              "estimated_bias": 0.177734375,
+              "estimated_probability": 0.5888671875
+            },
+            {
+              "rank": 12,
+              "key_binary": "0100, 0000, 0000, 1001",
+              "key_hex": "4009",
+              "score": -178,
+              "abs_score": 178,
+              "estimated_bias": 0.173828125,
+              "estimated_probability": 0.5869140625
+            },
+            {
+              "rank": 13,
+              "key_binary": "0101, 0000, 0000, 0110",
+              "key_hex": "5006",
+              "score": 176,
+              "abs_score": 176,
+              "estimated_bias": 0.171875,
+              "estimated_probability": 0.5859375
+            },
+            {
+              "rank": 14,
+              "key_binary": "1010, 0000, 0000, 0111",
+              "key_hex": "A007",
+              "score": -176,
+              "abs_score": 176,
+              "estimated_bias": 0.171875,
+              "estimated_probability": 0.5859375
+            },
+            {
+              "rank": 15,
+              "key_binary": "0101, 0000, 0000, 1010",
+              "key_hex": "500A",
+              "score": -176,
+              "abs_score": 176,
+              "estimated_bias": 0.171875,
+              "estimated_probability": 0.5859375
+            }
+          ],
+          "interpretation": "El mejor candidato tiene un score de -210, lo que indica un sesgo estad\u00edstico de 0.205078. Esto confirma que la aproximaci\u00f3n lineal se cumple con mayor frecuencia para esta subclave."
+        }
+      ]
+    },
+    {
+      "phase": "Fase 5: Recuperaci\u00f3n de la Subclave",
+      "description": "El ataque ha identificado exitosamente la subclave parcial de la \u00faltima ronda.",
+      "steps": [
+        {
+          "step": "Subclave Recuperada",
+          "recovered_subkey": {
+            "binary": "0111, 0000, 0000, 0000",
+            "hex": "7000",
+            "nibbles": [
+              "7",
+              "0",
+              "0",
+              "0"
+            ]
+          },
+          "score": -210,
+          "confidence": 0.205078125,
+          "conclusion": "Esta es la subclave parcial de la \u00faltima ronda con mayor probabilidad de ser correcta. Con esta informaci\u00f3n se podr\u00eda continuar el ataque para recuperar el resto de la clave maestra."
+        }
+      ]
+    }
+  ],
+  "rounds": 3,
+  "num_pairs": 5000,
+  "input_mask": "0010,0000,0000,1000"
+}
